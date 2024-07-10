@@ -39,11 +39,19 @@ jobs:
           with open('checkov_results.json') as f:
             results = json.load(f)
 
-          failed_checks = results.get('results', {}).get('failed_checks', [])
+          failed_checks = []
+          if isinstance(results, list):
+            for result in results:
+              if 'failed_checks' in result:
+                failed_checks.extend(result['failed_checks'])
+          elif isinstance(results, dict):
+            failed_checks = results.get('results', {}).get('failed_checks', [])
+          
+          # failed_checks = results.get('results', {}).get('failed_checks', [])
           if not failed_checks:
             sys.exit(0)
 
-          output = '### Checkov Scan Results:\n'
+          output = '### Checkov Scan Results\n'
           for check in failed_checks:
             check_id = check.get('check_id', 'N/A')
             check_name = check.get('check_name', 'N/A')
@@ -52,10 +60,7 @@ jobs:
             file_line = check.get('file_line_range', [0])[0]
             guideline = check.get('guideline', 'N/A')
     
-            output += f'- **{check_id}**: {check_name} ({severity})\n'
-            output += f'  File: `{file_path}`\n'
-            output += f'  Line: {file_line}\n'
-            output += f'  {guideline}\n\n'
+            output += f'- **{file_path}:{file_line} - `{check_id}`` - {check_name} - ({severity}) - {guideline}\n'
 
           with open('checkov_output.md', 'w') as out_file:
             out_file.write(output)
