@@ -60,7 +60,7 @@ jobs:
             file_line = check.get('file_line_range', [0])[0]
             guideline = check.get('guideline', 'N/A')
     
-            output += f'- **{file_path}:{file_line} - `{check_id}`` - {check_name} - ({severity}) - {guideline}\n'
+            output += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
 
           with open('checkov_output.md', 'w') as out_file:
             out_file.write(output)
