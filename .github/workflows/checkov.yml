@@ -32,7 +32,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           echo "Preparing Checkov results"
-          python -c <<EOF
+          python - <<EOF
           import json
           import sys
 
