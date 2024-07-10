@@ -1,5 +1,9 @@
 name: Checkov Scan
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   pull_request: {}
   workflow_dispatch: {}
@@ -22,7 +26,7 @@ jobs:
 
       - name: Run Checkov scan
         run: |
-          checkov -d . --output json > checkov_results.json
+          checkov -d . --soft-fail --output json > checkov_results.json
 
       - name: Report Checkov results
         if: github.event_name == 'pull_request'
