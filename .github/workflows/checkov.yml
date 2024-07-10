@@ -1,0 +1,64 @@
+name: Checkov Scan
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  checkov_scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov scan
+        run: |
+          checkov -d . --output json > checkov_results.json
+
+      - name: Report Checkov results
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Preparing Checkov results"
+          python -c <<EOF
+          import json
+          import sys
+
+          with open('checkov_results.json') as f:
+            results = json.load(f)
+
+          failed_checks = results.get('results', {}).get('failed_checks', [])
+          if not failed_checks:
+            sys.exit(0)
+
+          output = '### Checkov Scan Results:\n'
+          for check in failed_checks:
+            output += f'- **{check.get("check_id")}**: {check.get("check_name")} ({check.get("severity")})\n'
+            output += f'  File: `{check.get("file_path")}`\n'
+            output += f'  Line: {check.get("file_line_range", [0])[0]}\n'
+            output += f'  {check.get("guideline")}\n\n'
+
+          with open('checkov_output.md', 'w') as out_file:
+            out_file.write(output)
+          EOF
+
+      - name: Post comment with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('checkov_output.md', 'utf8');
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            });
