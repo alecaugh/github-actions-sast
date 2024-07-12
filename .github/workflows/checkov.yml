@@ -34,7 +34,7 @@ jobs:
           directory: .
           soft_fail: true  # don't want to fail the step, because of found findings
           output_format: json
-          output_file_path: checkov_results.json
+          output_file_path: ./checkov_results.json
 
 
       - name: Report Checkov results
