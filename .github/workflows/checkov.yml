@@ -33,6 +33,7 @@ jobs:
         with:
           directory: .
           soft_fail: true  # don't want to fail the step, because of found findings
+          quiet: true
           output_format: json
           output_file_path: ./checkov_results.json
 
