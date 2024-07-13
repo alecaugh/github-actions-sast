@@ -22,7 +22,7 @@ jobs:
 
       - name: Run Checkov scan
         run: |
-          checkov -d . --output json > checkov_results.json
+          checkov -d . --output json --quiet
 
       - name: Report Checkov results
         if: github.event_name == 'pull_request'
