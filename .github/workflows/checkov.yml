@@ -1,5 +1,9 @@
 name: Checkov Scan
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   pull_request: {}
   workflow_dispatch: {}
@@ -17,37 +21,53 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Checkov
-        run: pip install checkov
+      # - name: Install Checkov
+      #   run: pip install checkov
 
-      - name: Run Checkov scan
-        run: |
-          checkov -d . --output json > checkov_results.json
+      # - name: Run Checkov scan
+      #   run: |
+      #     checkov --soft-fail --output json > checkov_results.json
+        
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          soft_fail: true  # don't want to fail the step, because of found findings
+          quiet: true
+          output_format: json
+          output_file_path: ./checkov_results.json,
+
 
       - name: Report Checkov results
         if: github.event_name == 'pull_request'
         run: |
           echo "Preparing Checkov results"
-          python -c <<EOF
+          python - <<EOF
           import json
           import sys
 
           with open('checkov_results.json') as f:
             results = json.load(f)
 
-          failed_checks = results.get('results', {}).get('failed_checks', [])
-          if not failed_checks:
-            sys.exit(0)
+          comment_body = '### Checkov Scan Results\n'
 
-          output = '### Checkov Scan Results:\n'
-          for check in failed_checks:
-            output += f'- **{check.get("check_id")}**: {check.get("check_name")} ({check.get("severity")})\n'
-            output += f'  File: `{check.get("file_path")}`\n'
-            output += f'  Line: {check.get("file_line_range", [0])[0]}\n'
-            output += f'  {check.get("guideline")}\n\n'
+          for result in results:
+            if len(result['results']['failed_checks']) > 0:
+              for failed_check in result['results']['failed_checks']:
+                check_id        = failed_check['check_id']
+                check_name      = failed_check['check_name']
+                # severity      = failed_check['severity'] # Removed as always null
+                file_path       = failed_check['file_path']
+                file_line_start = failed_check['file_line_range'][0]
+                file_line_end   = failed_check['file_line_range'][1]
+                guideline       = failed_check['guideline']
+                comment_body    += f'- **{file_path}:{file_line_start}-{file_line_end}** - {check_id} - {check_name} - {guideline}\n'
+            else:
+              check_type    = result['check_type']
+              comment_body  += f"- No {check_type} issues found\n"
 
-          with open('checkov_output.md', 'w') as out_file:
-            out_file.write(output)
+          with open('checkov_comment.md', 'w') as file:
+            file.write(comment_body)
           EOF
 
       - name: Post comment with results
@@ -56,7 +76,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const results = fs.readFileSync('checkov_output.md', 'utf8');
+            const results = fs.readFileSync('checkov_comment.md', 'utf8');
             github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
