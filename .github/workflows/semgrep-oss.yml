@@ -3,7 +3,6 @@ name: Semgrep OSS scan
 
 permissions:
   contents: read
-  pull-requests: write
 
 on:
   # Scan changed files in PRs (diff-aware scanning):
