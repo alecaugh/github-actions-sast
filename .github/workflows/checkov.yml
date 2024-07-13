@@ -54,13 +54,14 @@ jobs:
           for result in results:
             if len(result['results']['failed_checks']) > 0:
               for failed_check in result['results']['failed_checks']:
-                check_id      = failed_check['check_id']
-                check_name    = failed_check['check_name']
-                severity      = failed_check['severity']
-                file_path     = failed_check['file_path']
-                file_line     = failed_check['file_line_range'][0]
-                guideline     = failed_check['guideline']
-                comment_body  += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
+                check_id        = failed_check['check_id']
+                check_name      = failed_check['check_name']
+                # severity      = failed_check['severity'] # Removed as always null
+                file_path       = failed_check['file_path']
+                file_line_start = failed_check['file_line_range'][0]
+                file_line_end   = failed_check['file_line_range'][1]
+                guideline       = failed_check['guideline']
+                comment_body    += f'- **{file_path}:{file_line}** - {check_id} - {check_name} - {guideline}\n'
             else:
               check_type    = result['check_type']
               comment_body  += f"- No {check_type} issues found\n"
