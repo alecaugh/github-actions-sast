@@ -52,8 +52,8 @@ jobs:
           comment_body = '### Checkov Scan Results\n'
 
           for result in results:
-            if len(results['results']['failed_checks']) > 0:
-              for failed_check in results['results']['failed_checks']:
+            if len(result['results']['failed_checks']) > 0:
+              for failed_check in result['results']['failed_checks']:
                 check_id      = failed_check['check_id']
                 check_name    = failed_check['check_name']
                 severity      = failed_check['severity']
