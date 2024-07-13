@@ -50,31 +50,23 @@ jobs:
             results = json.load(f)
 
           failed_checks = []
-          if isinstance(results, list):
-            for result in results:
-              if 'failed_checks' in result:
-                failed_checks.extend(result['failed_checks'])
-          elif isinstance(results, dict):
-            failed_checks = results.get('results', {}).get('failed_checks', [])
-          
-          # failed_checks = results.get('results', {}).get('failed_checks', [])
-          output = '### Checkov Scan Results\n'
-          
-          if not failed_checks:
-            output += "No issues found."
+          comment_body = '### Checkov Scan Results\n'
 
-          for check in failed_checks:
-            check_id = check.get('check_id', 'N/A')
-            check_name = check.get('check_name', 'N/A')
-            severity = check.get('severity', 'N/A')
-            file_path = check.get('file_path', 'N/A')
-            file_line = check.get('file_line_range', [0])[0]
-            guideline = check.get('guideline', 'N/A')
-    
-            output += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
+          for result in results:
+            if 'failed_checks' in result:
+              for failed_check in failed_checks:
+                check_id    = failed_check['check_id']
+                check_name  = failed_check['check_name']
+                severity    = failed_check['severity']
+                file_path   = failed_check['file_path']
+                file_line   = failed_check['file_line_range'][0]
+                guideline   = failed_check['guideline']
+                comment_body      += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
+            else:
+              comment_body += "No issues found."
 
-          with open('checkov_output.md', 'w') as out_file:
-            out_file.write(output)
+          with open('checkov_comment.md', 'w') as file:
+            file.write(comment_body)
           EOF
 
       - name: Post comment with results
@@ -83,7 +75,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const results = fs.readFileSync('checkov_output.md', 'utf8');
+            const results = fs.readFileSync('checkov_comment.md', 'utf8');
             github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
