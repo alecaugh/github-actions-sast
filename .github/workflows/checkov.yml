@@ -49,22 +49,21 @@ jobs:
           with open('checkov_results.json') as f:
             results = json.load(f)
 
-          failed_checks = []
           comment_body = '### Checkov Scan Results\n'
 
           for result in results:
-            if 'results' in result:
-              if 'failed_checks' in result['results']
-                for failed_check in failed_checks:
-                  check_id    = failed_check['check_id']
-                  check_name  = failed_check['check_name']
-                  severity    = failed_check['severity']
-                  file_path   = failed_check['file_path']
-                  file_line   = failed_check['file_line_range'][0]
-                  guideline   = failed_check['guideline']
-                  comment_body      += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
+            if len(results['results']['failed_checks']) > 0:
+              for failed_check in results['results']['failed_checks']:
+                check_id      = failed_check['check_id']
+                check_name    = failed_check['check_name']
+                severity      = failed_check['severity']
+                file_path     = failed_check['file_path']
+                file_line     = failed_check['file_line_range'][0]
+                guideline     = failed_check['guideline']
+                comment_body  += f'- **{file_path}:{file_line} - `{check_id}` - {check_name} - ({severity}) - {guideline}\n'
             else:
-              comment_body += "No issues found.\n"
+              check_type    = result['check_type']
+              comment_body  += f"- No {check_type} issues found\n"
 
           with open('checkov_comment.md', 'w') as file:
             file.write(comment_body)
