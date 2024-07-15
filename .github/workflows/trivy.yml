@@ -23,7 +23,7 @@ jobs:
           scanners: 'vuln,misconfig,secret'
           hide-progress: true
           format: 'json'
-          scan-ref: 'src'
+          scan-ref: './src/'
           # output: 'trivy_results.json'
       - name: Publish Trivy Output to Summary
         run: |
