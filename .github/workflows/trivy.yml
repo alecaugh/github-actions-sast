@@ -45,7 +45,7 @@ jobs:
                           severity = vulnerability["Severity"]
                           fix = vulnerability["FixedVersion"]
                           comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
-                  elseif result["Class"] == "config" && result["Target"] != ".":
+                  elif (result["Class"] == "config" && result["Target"] != "."):
                       path = result["Target"]
                       comment_body += f"- **{path}**\n"
                       for misconfiguration in result["Misconfigurations"]:
