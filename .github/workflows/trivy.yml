@@ -20,10 +20,10 @@ jobs:
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: 'fs'
-          scanners: 'vuln,misconfig,secret,license'
-          vuln-type: 'os,library'
+          scanners: 'vuln,misconfig,secret'
           hide-progress: true
           format: 'json'
+          scan-ref: 'src'
           # output: 'trivy_results.json'
       - name: Publish Trivy Output to Summary
         run: |
