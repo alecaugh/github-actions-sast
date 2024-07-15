@@ -32,7 +32,7 @@ jobs:
 
       # Run the "semgrep scan" command on the command line of the docker image.
     - name: Scan with semgrep
-      run: semgrep scan --config auto --json --debug > semgrep_results.json
+      run: semgrep scan --config auto --json > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
@@ -49,7 +49,8 @@ jobs:
                 start_line = result["start"]["line"]
                 message = result["extra"]["message"]
                 rule_id = result["check_id"]
-                comment_body += f"- **{path}:{start_line}** - {rule_id} - {message}\n"
+                severity = result["extra"]["metadata"]["impact"]
+                comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
         else:
             comment_body += "No issues found."
 
