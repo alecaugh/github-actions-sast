@@ -20,6 +20,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: fs
+          vuln-type: os,library,vuln,config
           hide-progress: true
           format: 'json'
           output: 'trivy_results.json'
