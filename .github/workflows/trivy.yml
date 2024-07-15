@@ -22,19 +22,54 @@ jobs:
           scan-type: 'fs'
           scanners: 'vuln,misconfig,secret'
           hide-progress: true
-          format: 'json'
-          # scan-ref: './src/'
-          # output: 'trivy_results.json'
+          # format: 'json'
+          output: 'trivy_results.json'
+      # - name: Convert Trivy results to markdown
+      #   run: |
+      #     python - <<EOF
+      #     import json
+
+      #     with open("trivy_results.json", "r") as file:
+      #         results = json.load(file)
+
+      #     comment_body = "### Trivy Scan Results\n\n"
+      #     if results["Results"]:
+      #         for result in results["Results"]:
+      #             if result["Class"] == "lang-pkgs":
+      #                 for vulnerability in result["Vulnerabilities"]
+      #                     path = result["path"]
+      #                     start_line = result["start"]["line"]
+      #                     message = result["extra"]["message"]
+      #                     rule_id = result["check_id"]
+      #                     severity = result["extra"]["metadata"]["impact"]
+      #                     comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
+      #             elseif result["Class"] == "config":
+
+      #     else:
+      #         comment_body += "No issues found."
+
+      #     with open("trivy_comment.md", "w") as file:
+      #         file.write(comment_body)
+      #     EOF
       - name: Publish Trivy Output to Summary
         run: |
           if [[ -s trivy_results.json ]]; then
             {
-              echo "### Security Output"
-              echo "<details><summary>Click to expand</summary>"
+              echo "###Trivy Scan Results"
               echo ""
               echo '```terraform'
               cat trivy_results.json
               echo '```'
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
+            } >> trivy_comment.md
           fi
+      - name: Post comment with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('trivy_comment.md', 'utf8');
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            });
