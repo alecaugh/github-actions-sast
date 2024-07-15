@@ -57,7 +57,7 @@ jobs:
                 comment_body    += f'- **{file_path}:{file_line_start}-{file_line_end}** - {check_id} - {check_name} - {guideline}\n'
             else:
               check_type    = result['check_type']
-              comment_body  += f"- No {check_type} issues found\n"
+              comment_body  += f"No {check_type} issues found\n"
 
           with open('checkov_comment.md', 'w') as file:
             file.write(comment_body)

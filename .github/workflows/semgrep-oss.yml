@@ -49,7 +49,7 @@ jobs:
                 start_line = result["start"]["line"]
                 message = result["extra"]["message"]
                 rule_id = result["check_id"]
-                severity = result["impact"]
+                severity = result["extra"]["metadata"]["impact"]
                 comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
         else:
             comment_body += "No issues found."
