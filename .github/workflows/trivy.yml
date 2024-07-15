@@ -19,10 +19,10 @@ jobs:
       - name: Run Trivy scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          scan-type: fs
-          vuln-type: vuln
-          hide-progress: true
-          format: 'json'
+          scan-type: 'fs'
+          vuln-type: 'vuln'
+          # hide-progress: true
+          # format: 'json'
           # output: 'trivy_results.json'
       - name: Publish Trivy Output to Summary
         run: |
