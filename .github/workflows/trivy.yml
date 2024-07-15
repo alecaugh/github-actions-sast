@@ -22,8 +22,8 @@ jobs:
           scan-type: 'fs'
           vuln-type: 'os,library'
           # hide-progress: true
-          # format: 'json'
-          # output: 'trivy_results.json'
+          format: 'json'
+          output: 'trivy_results.json'
       - name: Publish Trivy Output to Summary
         run: |
           if [[ -s trivy_results.json ]]; then
