@@ -24,7 +24,7 @@ jobs:
           hide-progress: true
           ignore-unfixed: true
           format: 'json'
-          # output: 'trivy_results.json'
+          output: 'trivy_results.json'
       - name: Convert Trivy results to markdown
         run: |
           python - <<EOF
@@ -44,7 +44,7 @@ jobs:
                   rule_id = vulnerability["VulnerabilityID"]
                   severity = vulnerability["Severity"]
                   fix = vulnerability["FixedVersion"]
-                  comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
+                  comment_body += f"  - {rule_id} - {severity} - {message} - **Fixed in version {fix}**\n"
               elif result["Class"] == "config" and "Misconfigurations" in result:
                 path = result["Target"]
                 comment_body += f"- **{path}**\n"
@@ -54,6 +54,16 @@ jobs:
                   severity = misconfiguration["Severity"]
                   url = misconfiguration["PrimaryURL"]
                   comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
+              elif result["Class"] == "secret":
+                path = result["Target"]
+                comment_body += f"- **{path}**\n"
+                for secret in result["Secrets"]:
+                  message = secret["Title"]
+                  rule_id = secret["ID"]
+                  severity = secret["Severity"]
+                  start_line = secret["StartLine"]
+                  end_line = secret["EndLine"]
+                  comment_body += f"  - **{start_line}:{end_line}** - {message} - {severity}\n"
           else:
             comment_body += "No issues found."
 
