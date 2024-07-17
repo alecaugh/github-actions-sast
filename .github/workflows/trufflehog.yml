@@ -1,15 +1,10 @@
 name: TruffleHog Scan
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  pull_request: {}
 
 permissions:
   contents: read
-  id-token: write
-  issues: write
   pull-requests: write
 
 jobs:
@@ -32,7 +27,7 @@ jobs:
           path: ./
           base: "${{ github.event.repository.default_branch }}"
           head: HEAD
-          extra_args: --debug
+          extra_args: --json
 
       # - name: Scan Results Status
       #   if: steps.trufflehog.outcome == 'failure'
