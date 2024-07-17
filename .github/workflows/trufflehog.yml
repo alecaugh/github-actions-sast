@@ -27,9 +27,9 @@ jobs:
           path: ./
           base: "${{ github.event.repository.default_branch }}"
           head: HEAD
-          extra_args: --json > trufflehog_results.txt
+          extra_args: "--json > trufflehog_results.txt"
 
-      - name: Convert Semgrep results to markdown
+      - name: Convert TruffleHog results to markdown
         run: |
           python - <<EOF
           import json
@@ -64,7 +64,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const results = fs.readFileSync('semgrep_comment.md', 'utf8');
+            const results = fs.readFileSync('trufflehog_comment.md', 'utf8');
             github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
