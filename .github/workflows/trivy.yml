@@ -1,0 +1,84 @@
+name: Trivy Scan
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  trivy_scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: 'fs'
+          scanners: 'vuln,misconfig'  # misconfig,secret
+          hide-progress: true
+          ignore-unfixed: true
+          format: 'json'
+          output: 'trivy_results.json'
+      - name: Convert Trivy results to markdown
+        run: |
+          python - <<EOF
+          import json
+
+          with open("trivy_results.json", "r") as file:
+            results = json.load(file)
+
+          comment_body = "### Trivy Scan Results\n\n"
+          if "Results" in results:
+            for result in results["Results"]:
+              if result["Class"] == "lang-pkgs":
+                path = result["Target"]
+                comment_body += f"- **{path}**\n"
+                for vulnerability in result["Vulnerabilities"]:
+                  message = vulnerability["Title"]
+                  rule_id = vulnerability["VulnerabilityID"]
+                  severity = vulnerability["Severity"]
+                  fix = vulnerability["FixedVersion"]
+                  comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
+              elif result["Class"] == "config" and "Misconfigurations" in result:
+                path = result["Target"]
+                comment_body += f"- **{path}**\n"
+                for misconfiguration in result["Misconfigurations"]:
+                  message = misconfiguration["Title"]
+                  rule_id = misconfiguration["ID"]
+                  severity = misconfiguration["Severity"]
+                  url = misconfiguration["PrimaryURL"]
+                  comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
+          else:
+            comment_body += "No issues found."
+
+          with open("trivy_comment.md", "w") as file:
+            file.write(comment_body)
+          EOF
+      # - name: Publish Trivy Output to Summary
+      #   run: |
+      #     if [[ -s trivy_results.json ]]; then
+      #       {
+      #         echo "### Trivy Scan Results"
+      #         echo ""
+      #         echo '```terraform'
+      #         cat trivy_results.json
+      #         echo '```'
+      #       } >> trivy_comment.md
+      #     fi
+      - name: Post comment with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('trivy_comment.md', 'utf8');
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            });
