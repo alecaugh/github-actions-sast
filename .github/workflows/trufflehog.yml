@@ -27,8 +27,50 @@ jobs:
           path: ./
           base: "${{ github.event.repository.default_branch }}"
           head: HEAD
-          extra_args: --json
+          extra_args: --json > trufflehog_results.txt
 
-      # - name: Scan Results Status
-      #   if: steps.trufflehog.outcome == 'failure'
-      #   run: exit 1
+      - name: Convert Semgrep results to markdown
+        run: |
+          python - <<EOF
+          import json
+
+          with open("trufflehog_results.txt", "r") as file:
+            lines = file.readlines()
+
+          comment_body = "### TruffleHog Scan Results\n\n"
+
+          for line in lines:
+
+            json_output = json.loads(line)
+    
+            if "SourceMetadata" in json_output:
+              path = json_output["SourceMetadata"]["Data"]["Git"]["file"]
+              line = json_output["SourceMetadata"]["Data"]["Git"]["line"]
+              email = json_output["SourceMetadata"]["Data"]["Git"]["email"]
+              message = json_output["DetectorName"]
+              comment_body += f"- **{path}:{line}** - Secret type: {message} - Committed by: {email}\n"
+
+          try:
+            path
+          except NameError:
+            comment_body += "No issues found."
+
+          with open("trufflehog_comment.md", "w") as file:
+            file.write(comment_body)
+          EOF
+
+      - name: Post comment with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('semgrep_comment.md', 'utf8');
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            });
+
+      - name: Scan Results Status
+        if: steps.trufflehog.outcome == 'failure'
+        run: exit 1
