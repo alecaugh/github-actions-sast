@@ -36,7 +36,8 @@ jobs:
           comment_body = "### Trivy Scan Results\n\n"
           if results["Results"]:
               for result in results["Results"]:
-                  comment_body += f"{result["Class"]}\n"
+                  class = result["Class"]
+                  comment_body += f"{class}\n"
                   if result["Class"] == "lang-pkgs":
                       path = result["Target"]
                       comment_body += f"- **{path}**\n"
