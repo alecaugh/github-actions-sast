@@ -34,10 +34,8 @@ jobs:
               results = json.load(file)
 
           comment_body = "### Trivy Scan Results\n\n"
-          if results["Results"]:
+          if "Results" in results:
               for result in results["Results"]:
-                  cclass = result["Class"]
-                  comment_body += f"{cclass}\n"
                   if result["Class"] == "lang-pkgs":
                       path = result["Target"]
                       comment_body += f"- **{path}**\n"
@@ -47,7 +45,7 @@ jobs:
                           severity = vulnerability["Severity"]
                           fix = vulnerability["FixedVersion"]
                           comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
-                  elif result["Class"] == "config" and result["Misconfigurations"]:
+                  elif result["Class"] == "config" and "Misconfigurations" in result:
                       path = result["Target"]
                       comment_body += f"- **{path}**\n"
                       for misconfiguration in result["Misconfigurations"]:
