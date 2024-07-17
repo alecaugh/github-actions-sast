@@ -31,34 +31,34 @@ jobs:
           import json
 
           with open("trivy_results.json", "r") as file:
-              results = json.load(file)
+            results = json.load(file)
 
           comment_body = "### Trivy Scan Results\n\n"
           if "Results" in results:
-              for result in results["Results"]:
-                  if result["Class"] == "lang-pkgs":
-                      path = result["Target"]
-                      comment_body += f"- **{path}**\n"
-                      for vulnerability in result["Vulnerabilities"]:
-                          message = vulnerability["Title"]
-                          rule_id = vulnerability["VulnerabilityID"]
-                          severity = vulnerability["Severity"]
-                          fix = vulnerability["FixedVersion"]
-                          comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
-                  elif result["Class"] == "config" and "Misconfigurations" in result:
-                      path = result["Target"]
-                      comment_body += f"- **{path}**\n"
-                      for misconfiguration in result["Misconfigurations"]:
-                          message = misconfiguration["Title"]
-                          rule_id = misconfiguration["ID"]
-                          severity = misconfiguration["Severity"]
-                          url = misconfiguration["PrimaryURL"]
-                          comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
+            for result in results["Results"]:
+              if result["Class"] == "lang-pkgs":
+                path = result["Target"]
+                comment_body += f"- **{path}**\n"
+                for vulnerability in result["Vulnerabilities"]:
+                  message = vulnerability["Title"]
+                    rule_id = vulnerability["VulnerabilityID"]
+                    severity = vulnerability["Severity"]
+                    fix = vulnerability["FixedVersion"]
+                    comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
+              elif result["Class"] == "config" and "Misconfigurations" in result:
+                path = result["Target"]
+                comment_body += f"- **{path}**\n"
+                for misconfiguration in result["Misconfigurations"]:
+                  message = misconfiguration["Title"]
+                    rule_id = misconfiguration["ID"]
+                    severity = misconfiguration["Severity"]
+                    url = misconfiguration["PrimaryURL"]
+                    comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
           else:
-              comment_body += "No issues found."
+            comment_body += "No issues found."
 
           with open("trivy_comment.md", "w") as file:
-              file.write(comment_body)
+            file.write(comment_body)
           EOF
       # - name: Publish Trivy Output to Summary
       #   run: |
