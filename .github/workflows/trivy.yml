@@ -41,19 +41,19 @@ jobs:
                 comment_body += f"- **{path}**\n"
                 for vulnerability in result["Vulnerabilities"]:
                   message = vulnerability["Title"]
-                    rule_id = vulnerability["VulnerabilityID"]
-                    severity = vulnerability["Severity"]
-                    fix = vulnerability["FixedVersion"]
-                    comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
+                  rule_id = vulnerability["VulnerabilityID"]
+                  severity = vulnerability["Severity"]
+                  fix = vulnerability["FixedVersion"]
+                  comment_body += f"  - {rule_id} - {severity} - {message} - Fixed in version {fix}\n"
               elif result["Class"] == "config" and "Misconfigurations" in result:
                 path = result["Target"]
                 comment_body += f"- **{path}**\n"
                 for misconfiguration in result["Misconfigurations"]:
                   message = misconfiguration["Title"]
-                    rule_id = misconfiguration["ID"]
-                    severity = misconfiguration["Severity"]
-                    url = misconfiguration["PrimaryURL"]
-                    comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
+                  rule_id = misconfiguration["ID"]
+                  severity = misconfiguration["Severity"]
+                  url = misconfiguration["PrimaryURL"]
+                  comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
           else:
             comment_body += "No issues found."
 
