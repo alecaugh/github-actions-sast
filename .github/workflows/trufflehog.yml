@@ -33,12 +33,17 @@ jobs:
 
       - name: Install TruffleHog
         run: |
-          pip install truffleHog
+          pip install trufflehog
+
+      - name: Run pwd
+        run: pwd
+      
+      - name: Run ls
+        run: ls -la
 
       # Scan git history for all secrets
       - name: Run TruffleHog
-        run: |
-          trufflehog git --json "file://./" > trufflehog_results.txt
+        run: trufflehog git --json file://./ > trufflehog_results.txt
 
       - name: Convert TruffleHog results to markdown
         run: |
