@@ -21,6 +21,7 @@ jobs:
         with:
           fetch-depth: 0 # fetch all history for all branches and tags
 
+      # Scan only diff between branch of PR and default branch
       - name: TruffleHog OSS
         id: trufflehog
         uses: trufflesecurity/trufflehog@main
@@ -34,8 +35,8 @@ jobs:
         run: |
           pip install truffleHog
 
+      # Scan git history for all secrets
       - name: Run TruffleHog
-        id: trufflehog
         run: |
           trufflehog git file:///github/workspace --json > trufflehog_results.txt || true
 
@@ -81,6 +82,7 @@ jobs:
               body: results
             });
 
+      # Fail workflow if new secret detected 
       - name: Scan Results Status
         if: steps.trufflehog.outcome == 'failure'
         run: exit 1
