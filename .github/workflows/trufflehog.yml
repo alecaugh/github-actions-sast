@@ -10,12 +10,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  TruffleHog-Full-Git-History:
+  TruffleHog:
     runs-on: ubuntu-latest
 
-    container:
-      # A Docker image with Semgrep installed. Do not change this.
-      image: trufflesecurity/trufflehog
+    # container:
+    #   # A Docker image with Semgrep installed. Do not change this.
+    #   image: trufflesecurity/trufflehog
     
     steps:
       - name: Checkout code
@@ -23,9 +23,28 @@ jobs:
         with:
           fetch-depth: 0 # fetch all history for all branches and tags
 
+      # - name: Set up Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.x'
+
+      # Scan only diff between branch of PR and default branch
+      - name: TruffleHog OSS
+        id: trufflehog
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: "${{ github.event.repository.default_branch }}"
+          head: HEAD
+
+      # - name: Install TruffleHog
+      #   run: |
+      #     pip install trufflehog
+
       # Scan git history for all secrets
       - name: Run TruffleHog
-        run: trufflehog git --json --fail file://./ > trufflehog_results.txt
+        run: docker run --rm -v ${{ github.workspace }}:. trufflehog git --json --fail file://./ > trufflehog_results.txt
 
       - name: Convert TruffleHog results to markdown
         run: |
@@ -68,25 +87,6 @@ jobs:
               issue_number: context.issue.number,
               body: results
             });
-  
-  TruffleHog-Diff:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # fetch all history for all branches and tags
-
-      # Scan only diff between branch of PR and default branch
-      - name: TruffleHog OSS
-        id: trufflehog
-        uses: trufflesecurity/trufflehog@main
-        continue-on-error: true
-        with:
-          path: ./
-          base: "${{ github.event.repository.default_branch }}"
-          head: HEAD
 
       # Fail workflow if new secret(s) detected
       - name: Scan Results Status
