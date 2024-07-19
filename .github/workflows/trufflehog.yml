@@ -21,6 +21,11 @@ jobs:
         with:
           fetch-depth: 0 # fetch all history for all branches and tags
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
       # Scan only diff between branch of PR and default branch
       - name: TruffleHog OSS
         id: trufflehog
