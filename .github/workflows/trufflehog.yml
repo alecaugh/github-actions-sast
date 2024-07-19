@@ -38,7 +38,7 @@ jobs:
       # Scan git history for all secrets
       - name: Run TruffleHog
         run: |
-          trufflehog git --json file://./ > trufflehog_results.txt || true
+          trufflehog git --json "file://./" > trufflehog_results.txt
 
       - name: Convert TruffleHog results to markdown
         run: |
