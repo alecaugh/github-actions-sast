@@ -1,13 +1,6 @@
-import { createLogger } from "@trustpilot/logger"
-
 const logger = createLogger({ level: "error" })
 const mysql = require("mysql")
 const axiosRequest = require("axios")
-
-const HOURS_TO_KEEP_DATA = 24
-const DAYS_TO_KEEP_DELETED_DATA_INFO = 180
-const DAYS_TO_KEEP_CREATION_REQUESTS_INFO = 7
-const MAX_DELETION_ATTEMPTS = 10
 
 const TESTDATA_HANDLER_HOST = process.env.TESTDATA_HANDLER_HOST
 const DB_ACCESS = {
