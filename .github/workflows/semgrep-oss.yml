@@ -73,7 +73,7 @@ jobs:
         EOF
 
     - name: Scan with semgrep
-      run: semgrep scan --code --json --oss-only > semgrep_results.json
+      run: semgrep ci --code --json --oss-only > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
@@ -93,7 +93,7 @@ jobs:
                 severity = result["extra"]["metadata"]["impact"]
                 comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
         else:
-            comment_body += "No issues found.\n\n"
+            comment_body += "No new issues found.\n\n"
 
         with open("comment.md", "a") as file:
             file.write(comment_body)
@@ -113,7 +113,7 @@ jobs:
       run: |
         python - <<EOF
         comment_body = "### TruffleHog Scan Results\n\n"
-        comment_body += "No issues found.\n\n"
+        comment_body += "No new secrets found.\n\n"
 
         with open("comment.md", "a") as file:
             file.write(comment_body)
