@@ -68,12 +68,12 @@ jobs:
         else:
           comment_body += "No issues found.\n\n"
 
-        with open("trivy_comment.md", "w") as file:
+        with open("comment.md", "w") as file:
           file.write(comment_body)
         EOF
 
     - name: Scan with semgrep
-      run: semgrep scan --config auto --json --oss-only > semgrep_results.json
+      run: semgrep scan --code --json --oss-only > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
@@ -95,7 +95,7 @@ jobs:
         else:
             comment_body += "No issues found.\n\n"
 
-        with open("semgrep_comment.md", "w") as file:
+        with open("comment.md", "a") as file:
             file.write(comment_body)
         EOF
 
@@ -115,7 +115,7 @@ jobs:
         comment_body = "### TruffleHog Scan Results\n\n"
         comment_body += "No issues found.\n\n"
 
-        with open("trufflehog_comment.md", "w") as file:
+        with open("comment.md", "a") as file:
             file.write(comment_body)
         EOF
 
@@ -126,7 +126,7 @@ jobs:
         comment_body = "### TruffleHog Scan Results\n\n"
         comment_body += "Valid secrets found. Please check PR issues, remove and rotate identified secrets.\n\n"
 
-        with open("trufflehog_comment.md", "w") as file:
+        with open("comment.md", "a") as file:
             file.write(comment_body)
         EOF
 
@@ -135,7 +135,7 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const results = fs.readFileSync('semgrep_comment.md', 'utf8');
+          const results = fs.readFileSync('comment.md', 'utf8');
           github.rest.issues.createComment({
             ...context.repo,
             issue_number: context.issue.number,
