@@ -2,7 +2,7 @@ name: SAST scan
 
 permissions:
   contents: read
-  id-token: write
+  # id-token: write
   issues: write
   pull-requests: write
 
@@ -73,7 +73,7 @@ jobs:
         EOF
 
     - name: Scan with semgrep
-      run: semgrep ci --code --json --oss-only > semgrep_results.json
+      run: semgrep scan --json --oss-only > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
