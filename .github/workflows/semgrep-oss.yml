@@ -2,7 +2,6 @@ name: SAST scan
 
 permissions:
   contents: read
-  # id-token: write
   issues: write
   pull-requests: write
 
@@ -11,12 +10,12 @@ on:
 
 jobs:
   sast-scan:
-    name: security-scan
+    name: sast-scan
 
     runs-on: ubuntu-latest
 
     container:
-      image: semgrep/semgrep
+      image: semgrep/semgrep:sha-43d9ebd
 
     if: (github.actor != 'dependabot[bot]')
 
@@ -101,7 +100,7 @@ jobs:
 
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@main
+      uses: trufflesecurity/trufflehog@v3.80.1
       continue-on-error: true
       with:
         path: ./
@@ -124,7 +123,7 @@ jobs:
       run: |
         python - <<EOF
         comment_body = "### TruffleHog Scan Results\n\n"
-        comment_body += "Valid secrets found. Please check PR issues, remove and rotate identified secrets.\n\n"
+        comment_body += "**Valid secrets found.** Please check `Files changed` tab in PR to see identified secrets then remove and rotate.\n\n"
 
         with open("comment.md", "a") as file:
             file.write(comment_body)
