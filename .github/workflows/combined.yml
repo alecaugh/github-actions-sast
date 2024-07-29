@@ -76,7 +76,7 @@ jobs:
         EOF
 
     - name: Scan with semgrep
-      run: semgrep scan --json --oss-only > semgrep_results.json
+      run: semgrep scan --json --oss-only --include=*.ts --include=*.js --include=*.py --include=*.cs > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
@@ -94,7 +94,7 @@ jobs:
                 message = result["extra"]["message"]
                 rule_id = result["check_id"]
                 severity = result["extra"]["metadata"]["impact"]
-                comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
+                comment_body += f"- **{path}:{start_line}** - {severity} - {rule_id} - {message}\n"
         else:
             comment_body += "No code security issues found.\n\n"
 
