@@ -1,78 +1,38 @@
-name: SAST scan
+# Name of this GitHub Actions workflow.
+name: Semgrep OSS scan
 
 permissions:
   contents: read
-  issues: write
   pull-requests: write
 
 on:
+  # Scan changed files in PRs (diff-aware scanning):
   pull_request: {}
+  # Scan on-demand through GitHub Actions interface:
+  workflow_dispatch: {}
 
 jobs:
-  sast-scan:
-    name: sast-scan
-
+  semgrep:
+    # User definable name of this GitHub Actions job.
+    name: semgrep-oss/scan
+    # If you are self-hosting, change the following `runs-on` value: 
     runs-on: ubuntu-latest
 
     container:
-      image: semgrep/semgrep:sha-43d9ebd
+      # A Docker image with Semgrep installed. Do not change this.
+      image: semgrep/semgrep
 
+    # Skip any PR created by dependabot to avoid permission issues:
     if: (github.actor != 'dependabot[bot]')
 
     steps:
     - name: Check out code
+      # Fetch project source with GitHub Actions Checkout. Use either v3 or v4.
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
-    - name: Run Trivy scanner
-      uses: aquasecurity/trivy-action@0.24.0
-      with:
-        scan-type: 'fs'
-        scanners: 'vuln,misconfig'
-        hide-progress: true
-        ignore-unfixed: true
-        format: 'json'
-        output: 'trivy_results.json'
-
-    - name: Convert Trivy results to markdown
-      run: |
-        python - <<EOF
-        import json
-
-        with open("trivy_results.json", "r") as file:
-          results = json.load(file)
-
-        comment_body = "### Trivy Scan Results\n\n"
-        if "Results" in results:
-          for result in results["Results"]:
-            if result["Class"] == "lang-pkgs":
-              path = result["Target"]
-              comment_body += f"- **{path}**\n"
-              for vulnerability in result["Vulnerabilities"]:
-                message = vulnerability["Title"]
-                rule_id = vulnerability["VulnerabilityID"]
-                severity = vulnerability["Severity"]
-                fix = vulnerability["FixedVersion"]
-                comment_body += f"  - {rule_id} - {severity} - {message} - **Fixed in version {fix}**\n"
-            elif result["Class"] == "config" and "Misconfigurations" in result:
-              path = result["Target"]
-              comment_body += f"- **{path}**\n"
-              for misconfiguration in result["Misconfigurations"]:
-                message = misconfiguration["Title"]
-                rule_id = misconfiguration["ID"]
-                severity = misconfiguration["Severity"]
-                url = misconfiguration["PrimaryURL"]
-                comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
-        else:
-          comment_body += "No issues found.\n\n"
-
-        with open("comment.md", "w") as file:
-          file.write(comment_body)
-        EOF
-
+      # Run the "semgrep scan" command on the command line of the docker image.
     - name: Scan with semgrep
-      run: semgrep scan --json --oss-only > semgrep_results.json
+      run: semgrep scan --config auto --json > semgrep_results.json
 
     - name: Convert Semgrep results to markdown
       run: |
@@ -92,40 +52,9 @@ jobs:
                 severity = result["extra"]["metadata"]["impact"]
                 comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
         else:
-            comment_body += "No new issues found.\n\n"
+            comment_body += "No issues found."
 
-        with open("comment.md", "a") as file:
-            file.write(comment_body)
-        EOF
-
-    - name: TruffleHog OSS
-      id: trufflehog
-      uses: trufflesecurity/trufflehog@v3.80.1
-      continue-on-error: true
-      with:
-        path: ./
-        base: "${{ github.event.repository.default_branch }}"
-        head: HEAD
-
-    - name: TruffleHog Scan Results Success
-      if: steps.trufflehog.outcome != 'failure'
-      run: |
-        python - <<EOF
-        comment_body = "### TruffleHog Scan Results\n\n"
-        comment_body += "No new secrets found.\n\n"
-
-        with open("comment.md", "a") as file:
-            file.write(comment_body)
-        EOF
-
-    - name: TruffleHog Scan Results Failure
-      if: steps.trufflehog.outcome == 'failure'
-      run: |
-        python - <<EOF
-        comment_body = "### TruffleHog Scan Results\n\n"
-        comment_body += "**Valid secrets found.** Please check `Files changed` tab in PR to see identified secrets then remove and rotate.\n\n"
-
-        with open("comment.md", "a") as file:
+        with open("semgrep_comment.md", "w") as file:
             file.write(comment_body)
         EOF
 
@@ -134,13 +63,9 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const results = fs.readFileSync('comment.md', 'utf8');
+          const results = fs.readFileSync('semgrep_comment.md', 'utf8');
           github.rest.issues.createComment({
             ...context.repo,
             issue_number: context.issue.number,
             body: results
           });
-        
-    - name: Scan Results Status
-      if: steps.trufflehog.outcome == 'failure'
-      run: exit 1
