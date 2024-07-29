@@ -64,9 +64,10 @@ jobs:
                 rule_id = misconfiguration["ID"]
                 severity = misconfiguration["Severity"]
                 url = misconfiguration["PrimaryURL"]
-                start = misconfiguration["CauseMetadata"]["StartLine"]
-                end = misconfiguration["CauseMetadata"]["StartLine"]
-                comment_body += f"  - [{rule_id}]({url}) - {severity} - Line {start}:{end} - {message}\n"
+                file_lines = ""
+                if "StartLine" in misconfiguration["CauseMetadata"] and "EndLine" in misconfiguration["CauseMetadata"]:
+                  file_lines = str(misconfiguration["CauseMetadata"]["StartLine"]) + ":" + str(misconfiguration["CauseMetadata"]["EndLine"]) + " "
+                comment_body += f"  - {file_lines}[{rule_id}]({url}) - {severity} - {message}\n"
             else:
               comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
 
