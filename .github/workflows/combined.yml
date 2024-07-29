@@ -1,4 +1,4 @@
-name: SAST scan
+name: Security scan
 
 permissions:
   contents: read
@@ -46,7 +46,7 @@ jobs:
         comment_body = "### Trivy Scan Results\n\n"
         if "Results" in results:
           for result in results["Results"]:
-            if result["Class"] == "lang-pkgs":
+            if result["Class"] == "lang-pkgs" and "Vulnerabilities" in result:
               path = result["Target"]
               comment_body += f"- **{path}**\n"
               for vulnerability in result["Vulnerabilities"]:
@@ -64,8 +64,8 @@ jobs:
                 severity = misconfiguration["Severity"]
                 url = misconfiguration["PrimaryURL"]
                 comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
-        else:
-          comment_body += "No issues found.\n\n"
+          else:
+            comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
 
         with open("comment.md", "w") as file:
           file.write(comment_body)
@@ -92,11 +92,36 @@ jobs:
                 severity = result["extra"]["metadata"]["impact"]
                 comment_body += f"- **{path}:{start_line}** - {rule_id} - {severity} - {message}\n"
         else:
-            comment_body += "No new issues found.\n\n"
+            comment_body += "No code security issues found.\n\n"
 
         with open("comment.md", "a") as file:
             file.write(comment_body)
         EOF
+
+    - name: Post comment with results
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('comment.md', 'utf8');
+          github.rest.issues.createComment({
+            ...context.repo,
+            issue_number: context.issue.number,
+            body: results
+          });
+
+  secrets-scan:
+    name: secrets-scan
+
+    runs-on: ubuntu-latest
+
+    if: (github.actor != 'dependabot[bot]') && (github.event_name == 'pull_request')
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: TruffleHog OSS
       id: trufflehog
@@ -123,7 +148,7 @@ jobs:
       run: |
         python - <<EOF
         comment_body = "### TruffleHog Scan Results\n\n"
-        comment_body += "**Valid secrets found.** Please check `Files changed` tab in PR to see identified secrets then remove and rotate.\n\n"
+        comment_body += "**Valid secrets found.**\n\n Please check `Files changed` tab in PR to see identified secrets then remove and rotate.\n\n"
 
         with open("comment.md", "a") as file:
             file.write(comment_body)
