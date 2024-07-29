@@ -63,9 +63,9 @@ jobs:
                 rule_id = misconfiguration["ID"]
                 severity = misconfiguration["Severity"]
                 url = misconfiguration["PrimaryURL"]
-                comment_body += f"  - {rule_id} - {severity} - {message} - {url}\n"
-          else:
-            comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
+                comment_body += f"  - [{rule_id}]({url}) - {severity} - {message}\n"
+            else:
+              comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
 
         with open("comment.md", "w") as file:
           file.write(comment_body)
