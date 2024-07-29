@@ -1,0 +1,68 @@
+name: TruffleHog Git Scan
+
+on:
+  pull_request: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  TruffleHog:
+    runs-on: ubuntu-latest
+
+    container:
+      # A Docker image with Semgrep installed. Do not change this.
+      image: trufflesecurity/trufflehog
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all history for all branches and tags
+
+      # Scan git history for all secrets
+      - name: Run TruffleHog
+        run: trufflehog git --json --fail file://./ > trufflehog_results.txt
+
+      - name: Convert TruffleHog results to markdown
+        run: |
+          python - <<EOF
+          import json
+
+          with open("trufflehog_results.txt", "r") as file:
+            lines = file.readlines()
+
+          comment_body = "### TruffleHog Scan Results\n\n"
+
+          for line in lines:
+
+            json_output = json.loads(line)
+    
+            if "SourceMetadata" in json_output:
+              path = json_output["SourceMetadata"]["Data"]["Git"]["file"]
+              line = json_output["SourceMetadata"]["Data"]["Git"]["line"]
+              email = json_output["SourceMetadata"]["Data"]["Git"]["email"]
+              message = json_output["DetectorName"]
+              comment_body += f"- **{path}:{line}** - Secret type: {message} - Committed by: {email}\n"
+
+          try:
+            path
+          except NameError:
+            comment_body += "No issues found."
+
+          with open("trufflehog_comment.md", "w") as file:
+            file.write(comment_body)
+          EOF
+
+      - name: Post comment with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('trufflehog_comment.md', 'utf8');
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            });
