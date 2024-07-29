@@ -53,8 +53,9 @@ jobs:
                 message = vulnerability["Title"]
                 rule_id = vulnerability["VulnerabilityID"]
                 severity = vulnerability["Severity"]
+                pkg = vulnerability["PkgID"]
                 fix = vulnerability["FixedVersion"]
-                comment_body += f"  - {rule_id} - {severity} - {message} - **Fixed in version {fix}**\n"
+                comment_body += f"  - {rule_id} - {severity} - {pkg} - {message} - **Fixed in version {fix}**\n"
             elif result["Class"] == "config" and "Misconfigurations" in result:
               path = result["Target"]
               comment_body += f"- **{path}**\n"
@@ -63,7 +64,9 @@ jobs:
                 rule_id = misconfiguration["ID"]
                 severity = misconfiguration["Severity"]
                 url = misconfiguration["PrimaryURL"]
-                comment_body += f"  - [{rule_id}]({url}) - {severity} - {message}\n"
+                start = misconfiguration["CauseMetadata"]["StartLine"]
+                end = misconfiguration["CauseMetadata"]["StartLine"]
+                comment_body += f"  - [{rule_id}]({url}) - {severity} - Line {start}:{end} - {message}\n"
             else:
               comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
 
