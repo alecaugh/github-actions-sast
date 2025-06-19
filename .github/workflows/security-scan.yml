@@ -1,0 +1,241 @@
+name: Security scan
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+on:
+  workflow_call:
+    inputs:
+      fail-on-valid-secret:
+        description: Fail the secret-scan job if a new valid secret is detected (recommended).
+        type: boolean
+        required: true
+
+jobs:
+  sast-scan:
+    name: sast-scan
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: semgrep/semgrep:sha-43d9ebd
+
+    if: (github.actor != 'dependabot[bot]') && (github.event_name == 'pull_request')
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run Trivy scanner
+      uses: aquasecurity/trivy-action@0.29.0
+      with:
+        scan-type: 'fs'
+        scanners: 'vuln,misconfig'
+        hide-progress: true
+        ignore-unfixed: true
+        format: 'json'
+        version: 'v0.56.1'
+        output: 'trivy_results.json'
+
+    - name: Convert Trivy results to markdown
+      run: |
+        python - <<EOF
+        import json
+
+        with open("trivy_results.json", "r") as file:
+          results = json.load(file)
+
+        comment_body = "### Trivy Scan Results\n\n"
+
+        valid_result = False
+
+        if "Results" in results:
+          for result in results["Results"]:
+            if result["Class"] == "lang-pkgs" and "Vulnerabilities" in result:
+              path = result["Target"]
+              comment_body += f"- **{path}**\n"
+              for vulnerability in result["Vulnerabilities"]:
+                message = vulnerability["Title"]
+                rule_id = vulnerability["VulnerabilityID"]
+                severity = vulnerability["Severity"]
+                pkg = vulnerability["PkgID"]
+                fix = vulnerability["FixedVersion"]
+                comment_body += f"  - {rule_id} - {severity} - {pkg} - {message} - **Fixed in version {fix}**\n"
+                valid_result = True
+            elif result["Class"] == "config" and "Misconfigurations" in result:
+              path = result["Target"]
+              comment_body += f"- **{path}**\n"
+              for misconfiguration in result["Misconfigurations"]:
+                message = misconfiguration["Title"]
+                rule_id = misconfiguration["ID"]
+                severity = misconfiguration["Severity"]
+                url = misconfiguration["PrimaryURL"]
+                file_lines = ""
+                if "StartLine" in misconfiguration["CauseMetadata"] and "EndLine" in misconfiguration["CauseMetadata"]:
+                  file_lines = "L" + str(misconfiguration["CauseMetadata"]["StartLine"]) + "-" + str(misconfiguration["CauseMetadata"]["EndLine"]) + " "
+                comment_body += f"  - {file_lines}[{rule_id}]({url}) - {severity} - {message}\n"
+                valid_result = True
+
+        if not valid_result:
+          comment_body += "No software composition analysis or security misconfiguration issues found.\n\n"
+
+        with open("comment.md", "w") as file:
+          file.write(comment_body)
+        EOF
+
+    - name: Scan with semgrep
+      run: semgrep scan --json --oss-only --include=*.ts --include=*.js --include=*.py --include=*.cs > semgrep_results.json
+
+    - name: Convert Semgrep results to markdown
+      run: |
+        python - <<EOF
+        import json
+
+        with open("semgrep_results.json", "r") as file:
+            results = json.load(file)
+
+        comment_body = "### Semgrep Scan Results\n\n"
+        if results["results"]:
+            for result in results["results"]:
+                path = result["path"]
+                start_line = result["start"]["line"]
+                message = result["extra"]["message"]
+                rule_id = result["check_id"]
+                severity = result["extra"]["metadata"]["impact"]
+                comment_body += f"- **{path}:{start_line}** - {severity} - {rule_id} - {message}\n"
+        else:
+            comment_body += "No code security issues found.\n\n"
+
+        with open("comment.md", "a") as file:
+            file.write(comment_body)
+        EOF
+
+    - name: Post comment with results
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('comment.md', 'utf8');
+
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          })
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('Trivy Scan Results')
+          })
+
+          // 2. If we have a comment, update it, otherwise create a new one
+          if (botComment) {
+            github.rest.issues.updateComment({
+              ...context.repo,
+              comment_id: botComment.id,
+              body: results
+            })
+          } else {
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            })
+          }
+
+  secrets-scan:
+    name: secrets-scan
+
+    runs-on: ubuntu-latest
+
+    if: (github.actor != 'dependabot[bot]') && (github.event_name == 'pull_request')
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: TruffleHog OSS
+      id: trufflehog
+      uses: trufflesecurity/trufflehog@v3.88.14
+      continue-on-error: true
+      with:
+        path: ./
+        base: "${{ github.event.repository.default_branch }}"
+        head: HEAD
+        version: 3.80.1
+
+    - name: TruffleHog Scan Results Success
+      if: steps.trufflehog.outcome != 'failure'
+      run: |
+        python - <<EOF
+        comment_body = "### TruffleHog Scan Results\n\n"
+        comment_body += "No new secrets found.\n\n"
+
+        with open("comment.md", "a") as file:
+            file.write(comment_body)
+        EOF
+
+    - name: TruffleHog Scan Results Failure
+      if: steps.trufflehog.outcome == 'failure'
+      run: |
+        python - <<EOF
+        import os
+
+        github_repository = os.getenv('GITHUB_REPOSITORY')
+        github_ref = os.getenv('GITHUB_REF')
+
+        pr_number = github_ref.split('/')[-2]
+
+        files_changed_url = f"https://github.com/{github_repository}/pull/{pr_number}/files"
+
+        comment_body = "### TruffleHog Scan Results\n\n"
+        comment_body += "**Valid secrets found!**\n\n Please check [Files changed](" + files_changed_url + ") tab in PR to see identified secrets then remove and rotate.\n\n"
+
+        with open("comment.md", "a") as file:
+            file.write(comment_body)
+        EOF
+
+    - name: Post comment with results
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('comment.md', 'utf8');
+
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          })
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('TruffleHog Scan Results')
+          })
+
+          // 2. If we have a comment, update it, otherwise create a new one
+          if (botComment) {
+            github.rest.issues.updateComment({
+              ...context.repo,
+              comment_id: botComment.id,
+              body: results
+            })
+          } else {
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: results
+            })
+          }
+
+    - name: Scan Results Status
+      if: steps.trufflehog.outcome == 'failure'
+      run: |
+        if [ ${{ inputs.fail-on-valid-secret }} == "true" ]
+        then
+          exit 1
+        fi
