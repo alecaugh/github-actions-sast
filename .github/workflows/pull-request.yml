@@ -10,6 +10,6 @@ permissions:
 
 jobs:
   security-scan:
-    uses: alecaugh/github-actions-sast/.github/workflows/security-scan.yml
+    uses: alecaugh/github-actions-sast/.github/workflows/security-scan.yml@main
     with:
       fail-on-valid-secret: true # Fail secret-scan job when valid secret detected (recommended)
