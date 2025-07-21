@@ -1,0 +1,15 @@
+name: Security scan
+
+on:
+  pull_request: {} # Should only be triggered on PR events
+
+permissions:
+  contents: read # Required to check out the repository
+  issues: write # Required for TruffleHog to create issues in PRs
+  pull-requests: write # Required to post comments in PRs
+
+jobs:
+  security-scan:
+    uses: alecaugh/github-actions-sast/.github/workflows/security-scan.yml@v1
+    with:
+      fail-on-valid-secret: true # Fail secret-scan job when valid secret detected (recommended)
