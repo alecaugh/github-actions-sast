@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: semgrep/semgrep:sha-09d318f4e #v1.128.1-nonroot
+      image: semgrep/semgrep:sha256:09d318f4e #v1.128.1-nonroot
 
     if: (github.actor != 'dependabot[bot]') && (github.event_name == 'pull_request')
 
