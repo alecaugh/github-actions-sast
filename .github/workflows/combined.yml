@@ -6,7 +6,8 @@ permissions:
   pull-requests: write
 
 on:
-  pull_request: {}
+  # pull_request: {}
+  workflow_dispatch: {}
 
 jobs:
   sast-scan:

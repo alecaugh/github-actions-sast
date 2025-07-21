@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: semgrep/semgrep:sha-43d9ebd
+      image: semgrep/semgrep:1.128.1
 
     if: (github.actor != 'dependabot[bot]') && (github.event_name == 'pull_request')
 
@@ -31,14 +31,14 @@ jobs:
         fetch-depth: 0
 
     - name: Run Trivy scanner
-      uses: aquasecurity/trivy-action@0.29.0
+      uses: aquasecurity/trivy-action@0.32.0
       with:
         scan-type: 'fs'
         scanners: 'vuln,misconfig'
         hide-progress: true
         ignore-unfixed: true
         format: 'json'
-        version: 'v0.56.1'
+        version: 'v0.64.1'
         output: 'trivy_results.json'
 
     - name: Convert Trivy results to markdown
@@ -161,13 +161,13 @@ jobs:
 
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@v3.88.14
+      uses: trufflesecurity/trufflehog@v3.90.1
       continue-on-error: true
       with:
         path: ./
         base: "${{ github.event.repository.default_branch }}"
         head: HEAD
-        version: 3.80.1
+        version: 3.90.1
 
     - name: TruffleHog Scan Results Success
       if: steps.trufflehog.outcome != 'failure'
