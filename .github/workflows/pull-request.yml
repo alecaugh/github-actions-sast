@@ -15,7 +15,7 @@ jobs:
     #   fail-on-valid-secret: true # Fail secret-scan job when valid secret detected (recommended)
     runs-on: ubuntu-latest
     steps:
-      - uses: ./checkov
+      - uses: /checkov
         with:
           directory: .
           framework: terraform
