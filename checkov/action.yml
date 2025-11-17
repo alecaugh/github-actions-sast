@@ -1,0 +1,25 @@
+name: Checkov composite action
+description: |-
+  Run [`checkov`](https://www.checkov.io) static analysis.
+inputs:
+  directory:
+    description: The directory to scan.
+    required: true
+  framework:
+    description: The framework to scan.
+    required: true
+  output_format:
+    description: The output format.
+    required: false
+    default: 'github_failed_only'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkov
+      uses: bridgecrewio/checkov-action@69e494e1b28dc24ec680e7ed364e0c227e2026bf	# v12.2743.0
+      with:
+        directory: ${{ inputs.directory }}
+        framework: ${{ inputs.framework }}
+        output_format: ${{ inputs.output_format }}
+        quiet: true
+        compact: true
