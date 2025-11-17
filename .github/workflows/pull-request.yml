@@ -22,9 +22,8 @@ jobs:
           directory: .
           framework: terraform
           output_format: sarif
-
       - name: Post SARIF findings in the pull request
-        uses: sett-and-hive/sarif-to-comment-action@v2
+        uses: sett-and-hive/sarif-to-comment-action@v2.0.1
         if: success() || failure()
         with:
           token: ${{ secrets.GITHUB_TOKEN }} # Default token has sufficient permissions
