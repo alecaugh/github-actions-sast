@@ -41,10 +41,10 @@ runs:
         MARKDOWN_CONTENT=$(node -e "
           const fs = require('fs');
           const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
-          const { sarifToComment } = require('@security-alert/sarif-to-comment');
+          const { sarifConverter } = require('@security-alert/sarif-to-comment');
           
           try {
-            const markdown = sarifToComment({ sarif: JSON.parse(sarif) });
+            const markdown = sarifConverter.sarifToComment({ sarif: JSON.parse(sarif) });
             // Set multiline output using a delimiter
             console.log('markdown_body<<EOF');
             console.log(markdown);
