@@ -24,42 +24,82 @@ runs:
       shell: bash
       run: npm install @security-alert/sarif-to-markdown
 
-    # 3. Convert SARIF to Markdown Body and store as a step output
-    - name: Convert SARIF to Markdown Body
-      id: convert-to-md
+    # # 3. Convert SARIF to Markdown Body and store as a step output
+    # - name: Convert SARIF to Markdown Body
+    #   id: convert-to-md
+    #   shell: bash
+    #   env:
+    #     SARIF_PATH: ${{ inputs.sarif_file_path }}
+    #   run: |
+    #     if [ ! -f "$SARIF_PATH" ]; then
+    #       echo "::error file=$SARIF_PATH::SARIF file not found."
+    #       echo "markdown_body=**Error:** SARIF file not found at \`$SARIF_PATH\`." >> $GITHUB_OUTPUT
+    #       exit 0 # Exit successfully if file is missing, but output an error message
+    #     fi
+        
+    #     # Use node to run the conversion logic
+    #     MARKDOWN_CONTENT=$(node -e "
+    #       const fs = require('fs');
+    #       const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
+    #       console.log('EXPORT KEYS:', Object.keys(require('@security-alert/sarif-to-markdown')));
+    #       const { sarifToMarkdown } = require('@security-alert/sarif-to-markdown');
+          
+    #       try {
+    #         const markdown = sarifToMarkdown({ sarif: JSON.parse(sarif) });
+    #         // Set multiline output using a delimiter
+    #         console.log('markdown_body<<EOF');
+    #         console.log(markdown);
+    #         console.log('EOF');
+    #       } catch (e) {
+    #         console.error('SARIF conversion failed:', e.message);
+    #         // On error, output an error message
+    #         console.log('markdown_body<<EOF');
+    #         console.log(\`**Error Processing SARIF:**\\n\` + e.message);
+    #         console.log('EOF');
+    #       }
+    #     ")
+        
+    #     echo "$MARKDOWN_CONTENT" >> $GITHUB_OUTPUT
+
+    - name: Convert SARIF to Markdown
+      id: convert
       shell: bash
       env:
         SARIF_PATH: ${{ inputs.sarif_file_path }}
+        GITHUB_OUTPUT: ${{ env.GITHUB_OUTPUT }}
       run: |
         if [ ! -f "$SARIF_PATH" ]; then
-          echo "::error file=$SARIF_PATH::SARIF file not found."
-          echo "markdown_body=**Error:** SARIF file not found at \`$SARIF_PATH\`." >> $GITHUB_OUTPUT
-          exit 0 # Exit successfully if file is missing, but output an error message
+          echo "markdown_body=**Error:** SARIF file not found at '$SARIF_PATH'." >> "$GITHUB_OUTPUT"
+          exit 0
         fi
-        
-        # Use node to run the conversion logic
-        MARKDOWN_CONTENT=$(node -e "
-          const fs = require('fs');
-          const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
-          console.log('EXPORT KEYS:', Object.keys(require('@security-alert/sarif-to-markdown')));
-          const { sarifToMarkdown } = require('@security-alert/sarif-to-markdown');
-          
-          try {
-            const markdown = sarifToMarkdown({ sarif: JSON.parse(sarif) });
-            // Set multiline output using a delimiter
-            console.log('markdown_body<<EOF');
-            console.log(markdown);
-            console.log('EOF');
-          } catch (e) {
-            console.error('SARIF conversion failed:', e.message);
-            // On error, output an error message
-            console.log('markdown_body<<EOF');
-            console.log(\`**Error Processing SARIF:**\\n\` + e.message);
-            console.log('EOF');
-          }
-        ")
-        
-        echo "$MARKDOWN_CONTENT" >> $GITHUB_OUTPUT
+
+        node <<'EOF'
+        const fs = require('fs');
+        const sarifPath = process.env.SARIF_PATH;
+        const outputPath = process.env.GITHUB_OUTPUT;
+
+        const converter = require('sarif-to-markdown');
+
+        // Detect correct export
+        const fn =
+          converter.sarifToMarkdown ||
+          converter.default ||
+          converter.convert ||
+          null;
+
+        if (!fn) {
+          fs.appendFileSync(outputPath,
+            `markdown_body<<EOF\n**Error**: sarif-to-markdown export not found\nEOF\n`);
+          process.exit(0);
+        }
+
+        const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+        const markdown = fn(sarif);
+
+        fs.appendFileSync(outputPath,
+          `markdown_body<<EOF\n${markdown}\nEOF\n`
+        );
+        EOF
     - name: Post/Update PR Comment
       uses: actions/github-script@v7
       if: github.event_name == 'pull_request'
