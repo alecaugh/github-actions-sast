@@ -20,9 +20,9 @@ runs:
         node-version: '20'
 
     # 2. Install the necessary NPM package
-    - name: Install sarif-to-comment package
-      shell: bash
-      run: npm install @security-alert/sarif-to-comment
+    # - name: Install sarif-to-comment package
+    #   shell: bash
+    #   run: npm install @security-alert/sarif-to-comment
 
     # 3. Convert SARIF to Markdown Body and store as a step output
     - name: Convert SARIF to Markdown Body
@@ -34,31 +34,18 @@ runs:
         if [ ! -f "$SARIF_PATH" ]; then
           echo "::error file=$SARIF_PATH::SARIF file not found."
           echo "markdown_body=**Error:** SARIF file not found at \`$SARIF_PATH\`." >> $GITHUB_OUTPUT
-          exit 0 # Exit successfully if file is missing, but output an error message
+          exit 0
         fi
         
-        # Use node to run the conversion logic
-        MARKDOWN_CONTENT=$(node -e "
-          const fs = require('fs');
-          const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
-          const { sarifConverter } = require('@security-alert/sarif-to-comment');
-          
-          try {
-            const markdown = sarifConverter.sarifToComment({ sarif: JSON.parse(sarif) });
-            // Set multiline output using a delimiter
-            console.log('markdown_body<<EOF');
-            console.log(markdown);
-            console.log('EOF');
-          } catch (e) {
-            console.error('SARIF conversion failed:', e.message);
-            // On error, output an error message
-            console.log('markdown_body<<EOF');
-            console.log(\`**Error Processing SARIF:**\\n\` + e.message);
-            console.log('EOF');
-          }
-        ")
-        
-        echo "$MARKDOWN_CONTENT" >> $GITHUB_OUTPUT
+        # ✅ FIX: Use npx to execute the package directly, passing the file path as an argument.
+        # This removes the need for 'npm install' and the complex require logic.
+        MARKDOWN_BODY=$(npx @security-alert/sarif-to-comment "$SARIF_PATH")
+
+        # The package outputs the markdown content directly, so we just capture it.
+        # Now we wrap the output for the action step.
+        echo "markdown_body<<EOF" >> $GITHUB_OUTPUT
+        echo "$MARKDOWN_BODY" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
     - name: Post/Update PR Comment
       uses: actions/github-script@v7
       if: github.event_name == 'pull_request'
