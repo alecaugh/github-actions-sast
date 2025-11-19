@@ -41,7 +41,7 @@ runs:
         MARKDOWN_CONTENT=$(node -e "
           const fs = require('fs');
           const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
-          console.log('EXPORT KEYS:', Object.keys(require('./node_modules_local/node_modules/@security-alert/sarif-to-comment')));
+          console.log('EXPORT KEYS:', Object.keys(require('@security-alert/sarif-to-comment')));
           const { sarifToComment } = require('@security-alert/sarif-to-comment');
           
           try {
