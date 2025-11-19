@@ -25,6 +25,7 @@ runs:
         compact: true
     - name: Post comment with results
       uses: actions/github-script@v7
+      if: success() || failure()
       with:
         script: |
           const fs = require('fs');
