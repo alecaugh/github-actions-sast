@@ -1,0 +1,108 @@
+name: Post SARIF Results as PR Comment
+description: >
+  Converts a SARIF file to Markdown using @security-alert/sarif-to-comment and posts 
+  the result as a comment to the current Pull Request (if one exists).
+inputs:
+  sarif_file_path:
+    description: 'The path to the SARIF file to be converted (e.g., results.sarif).'
+    required: true
+  comment_title:
+    description: 'The title to prepend to the comment body.'
+    required: true
+    default: '### 🔒 Security Scan Results'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    # 2. Install the necessary NPM package
+    - name: Install sarif-to-comment package
+      shell: bash
+      run: npm install @security-alert/sarif-to-comment
+
+    # 3. Convert SARIF to Markdown Body and store as a step output
+    - name: Convert SARIF to Markdown Body
+      id: convert-to-md
+      shell: bash
+      env:
+        SARIF_PATH: ${{ inputs.sarif_file_path }}
+      run: |
+        if [ ! -f "$SARIF_PATH" ]; then
+          echo "::error file=$SARIF_PATH::SARIF file not found."
+          echo "markdown_body=**Error:** SARIF file not found at \`$SARIF_PATH\`." >> $GITHUB_OUTPUT
+          exit 0 # Exit successfully if file is missing, but output an error message
+        fi
+        
+        # Use node to run the conversion logic
+        MARKDOWN_CONTENT=$(node -e "
+          const fs = require('fs');
+          const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
+          const { sarifToComment } = require('@security-alert/sarif-to-comment');
+          
+          try {
+            const markdown = sarifToComment({ sarif: JSON.parse(sarif) });
+            // Set multiline output using a delimiter
+            console.log('markdown_body<<EOF');
+            console.log(markdown);
+            console.log('EOF');
+          } catch (e) {
+            console.error('SARIF conversion failed:', e.message);
+            // On error, output an error message
+            console.log('markdown_body<<EOF');
+            console.log(\`**Error Processing SARIF:**\\n\` + e.message);
+            console.log('EOF');
+          }
+        ")
+        
+        echo "$MARKDOWN_CONTENT" >> $GITHUB_OUTPUT
+    - name: Post/Update PR Comment
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const title = '${{ inputs.comment_title }}';
+          const convertedBody = '${{ steps.convert-to-md.outputs.markdown_body }}';
+          const fullBody = title + '\n\n' + convertedBody;
+
+          if (!context.payload.pull_request) {
+            console.log("Not a Pull Request event. Skipping comment posting.");
+            return;
+          }
+
+          const issue_number = context.payload.pull_request.number;
+
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue_number,
+          })
+
+          // Find the existing comment using the unique title
+          const botComment = comments.find(comment => {
+            return comment.body.includes(title);
+          })
+
+          // 2. If we have a comment, update it, otherwise create a new one
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: fullBody
+            })
+            console.log('Updated existing SARIF comment.');
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: fullBody
+            })
+            console.log('Created new SARIF comment.');
+          }
