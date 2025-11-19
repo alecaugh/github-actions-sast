@@ -23,15 +23,6 @@ runs:
         output_format: ${{ inputs.output_format }}
         quiet: true
         compact: true
-    # - name: Post SARIF findings in the pull request
-    #   uses: sett-and-hive/sarif-to-comment-action@v2.0.1
-    #   if: success() || failure()
-    #   with:
-    #     token: ${{ secrets.GITHUB_TOKEN }} # Default token has sufficient permissions
-    #     repository: ${{ github.repository }}
-    #     branch: ${{ github.head_ref }}
-    #     pr-number: ${{ github.event.number }}
-    #     sarif-file: results.sarif # Path to the SARIF file generated above
     - name: Post comment with results
       uses: actions/github-script@v7
       with:
