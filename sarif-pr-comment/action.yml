@@ -20,9 +20,9 @@ runs:
         node-version: '20'
 
     # 2. Install the necessary NPM package
-    - name: Install sarif-to-comment package
+    - name: Install sarif-to-markdown package
       shell: bash
-      run: npm install @security-alert/sarif-to-comment
+      run: npm install @security-alert/sarif-to-markdown
 
     # 3. Convert SARIF to Markdown Body and store as a step output
     - name: Convert SARIF to Markdown Body
@@ -41,11 +41,11 @@ runs:
         MARKDOWN_CONTENT=$(node -e "
           const fs = require('fs');
           const sarif = fs.readFileSync(process.env.SARIF_PATH, 'utf8');
-          console.log('EXPORT KEYS:', Object.keys(require('@security-alert/sarif-to-comment')));
-          const { sarifToComment } = require('@security-alert/sarif-to-comment');
+          console.log('EXPORT KEYS:', Object.keys(require('@security-alert/sarif-to-markdown')));
+          const { sarifToMarkdown } = require('@security-alert/sarif-to-markdown');
           
           try {
-            const markdown = sarifToComment({ sarif: JSON.parse(sarif) });
+            const markdown = sarifToMarkdown({ sarif: JSON.parse(sarif) });
             // Set multiline output using a delimiter
             console.log('markdown_body<<EOF');
             console.log(markdown);
