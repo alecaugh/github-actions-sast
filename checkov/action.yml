@@ -25,6 +25,7 @@ runs:
         compact: true
     - name: Post SARIF Comment
       uses: ./sarif-pr-comment
+      if: success() || failure()
       with:
         sarif_file_path: results.sarif
         comment_title: '### 🔒 Checkov Security Scan Results'
