@@ -15,10 +15,9 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
-        package-manager-cache: false
 
     # 2. Install the necessary NPM package
     - name: Install sarif-to-comment package
