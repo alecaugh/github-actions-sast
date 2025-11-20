@@ -21,8 +21,8 @@ runs:
       uses: bridgecrewio/checkov-action@69e494e1b28dc24ec680e7ed364e0c227e2026bf	# v12.2743.0
       with:
         directory: ${{ inputs.directory }}
-        output_format: ${{ inputs.output_format }}
         soft_fail: ${{ inputs.soft_fail }}
+        output_format: ${{ inputs.output_format }}
         framework: all
         quiet: true
         compact: true

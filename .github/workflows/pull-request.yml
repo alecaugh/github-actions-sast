@@ -20,4 +20,8 @@ jobs:
         with:
           soft_fail: true
           output_format: sarif
+      - uses: ./grype
+        with:
+          fail_build: false
+          output_format: sarif
       - uses: ./trufflehog

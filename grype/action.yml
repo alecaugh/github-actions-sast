@@ -1,0 +1,48 @@
+name: Grype composite action
+description: |-
+  Run [`grype`](https://github.com/anchore/grype) static analysis.
+inputs:
+  output_format:
+    description: The output format.
+    required: false
+    default: 'sarif'
+  fail_build:
+    description: Return an error code if there are failed checks.
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: build local container
+      uses: docker/build-push-action@v4
+      with:
+        tags: localbuild/testimage:latest
+        push: false
+        load: true
+
+    - name: Scan image
+      uses: anchore/scan-action@v6
+      with:
+        image: "localbuild/testimage:latest"
+        fail-build: ${{ inputs.fail_build }}
+        output-format: ${{ inputs.output_format }}
+        severity-cutoff: critical
+        only-fixed: true
+    # - name: Scan image using Grype
+    #   id: grype
+    #   uses: anchore/scan-action@v6
+    #   with:
+    #     image: "${{ inputs.registry }}/${{ inputs.image_name }}"
+    #     fail-build: false
+    #     output-format: sarif
+    #     severity-cutoff: critical
+    #     only-fixed: true
+    - name: Post SARIF Comment
+      uses: ./sarif-pr-comment
+      if: success() || failure()
+      with:
+        sarif_file_path: results.sarif
+        comment_title: '### 🔒 Grype Security Scan Results'
