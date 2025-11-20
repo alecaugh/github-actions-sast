@@ -20,9 +20,9 @@ runs:
         node-version: '20'
 
     # 2. Install the necessary NPM package
-    - name: Install sarif-to-markdown package
-      shell: bash
-      run: npm install @security-alert/sarif-to-markdown
+    # - name: Install sarif-to-markdown package
+    #   shell: bash
+    #   run: npm install @security-alert/sarif-to-markdown
 
     # # 3. Convert SARIF to Markdown Body and store as a step output
     # - name: Convert SARIF to Markdown Body
@@ -61,45 +61,147 @@ runs:
         
     #     echo "$MARKDOWN_CONTENT" >> $GITHUB_OUTPUT
 
+    # - name: Convert SARIF to Markdown
+    #   id: convert
+    #   shell: bash
+    #   env:
+    #     SARIF_PATH: ${{ inputs.sarif_file_path }}
+    #     GITHUB_OUTPUT: ${{ env.GITHUB_OUTPUT }}
+    #   run: |
+    #     if [ ! -f "$SARIF_PATH" ]; then
+    #       echo "markdown_body=**Error:** SARIF file not found at '$SARIF_PATH'." >> "$GITHUB_OUTPUT"
+    #       exit 0
+    #     fi
+
+    #     node <<'EOF'
+    #     const fs = require('fs');
+    #     const sarifPath = process.env.SARIF_PATH;
+    #     const outputPath = process.env.GITHUB_OUTPUT;
+
+    #     const converter = require('sarif-to-markdown');
+
+    #     // Detect correct export
+    #     const fn =
+    #       converter.sarifToMarkdown ||
+    #       converter.default ||
+    #       converter.convert ||
+    #       null;
+
+    #     if (!fn) {
+    #       fs.appendFileSync(outputPath,
+    #         `markdown_body<<EOF\n**Error**: sarif-to-markdown export not found\nEOF\n`);
+    #       process.exit(0);
+    #     }
+
+    #     const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+    #     const markdown = fn(sarif);
+
+    #     fs.appendFileSync(outputPath,
+    #       `markdown_body<<EOF\n${markdown}\nEOF\n`
+    #     );
+    #     EOF
     - name: Convert SARIF to Markdown
-      id: convert
+      id: convert-to-md
       shell: bash
       env:
         SARIF_PATH: ${{ inputs.sarif_file_path }}
-        GITHUB_OUTPUT: ${{ env.GITHUB_OUTPUT }}
       run: |
-        if [ ! -f "$SARIF_PATH" ]; then
-          echo "markdown_body=**Error:** SARIF file not found at '$SARIF_PATH'." >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        node <<'EOF'
+        node << 'EOF'
         const fs = require('fs');
-        const sarifPath = process.env.SARIF_PATH;
-        const outputPath = process.env.GITHUB_OUTPUT;
 
-        const converter = require('sarif-to-markdown');
+        // ---- Embed converter code ----
+        function convertSarifToMarkdown(sarif) {
+          if (!sarif || !sarif.runs) {
+            return "**Invalid SARIF file** (no `runs` found)";
+          }
 
-        // Detect correct export
-        const fn =
-          converter.sarifToMarkdown ||
-          converter.default ||
-          converter.convert ||
-          null;
+          const run = sarif.runs[0];
+          const rules = {};
+          const results = run.results || [];
 
-        if (!fn) {
-          fs.appendFileSync(outputPath,
-            `markdown_body<<EOF\n**Error**: sarif-to-markdown export not found\nEOF\n`);
-          process.exit(0);
+          if (run.tool?.driver?.rules) {
+            run.tool.driver.rules.forEach(rule => {
+              rules[rule.id] = rule;
+            });
+          }
+
+          let md = `## 🔍 Security Scan Results\n\n`;
+
+          if (results.length === 0) {
+            return md + "_No issues found — great job!_";
+          }
+
+          md += `| Severity | Rule | Message | File:Line |\n`;
+          md += `|---------|------|---------|-----------|\n`;
+
+          const severityMap = {
+            error: "❌ Error",
+            warning: "⚠️ Warning",
+            note: "ℹ️ Note",
+          };
+
+          results.forEach((res, index) => {
+            const rule = rules[res.ruleId] || {};
+            const level = severityMap[res.level] || res.level || "unknown";
+
+            const message =
+              (res.message && res.message.text) ||
+              (rule.shortDescription && rule.shortDescription.text) ||
+              "No message";
+
+            let file = "N/A", line = "N/A";
+            const loc = res.locations?.[0]?.physicalLocation;
+            if (loc) {
+              file = loc.artifactLocation?.uri || "N/A";
+              line = loc.region?.startLine || "N/A";
+            }
+
+            md += `| ${level} | ${res.ruleId || "unknown"} | ${escapeMd(message)} | ${file}:${line} |\n`;
+          });
+
+          md += `\n---\n\n## 📝 Detailed Findings\n\n`;
+
+          results.forEach((res, i) => {
+            const rule = rules[res.ruleId] || {};
+            const message =
+              (res.message && res.message.text) ||
+              (rule.shortDescription && rule.shortDescription.text) ||
+              "No message";
+
+            const fullDesc = rule.fullDescription?.text || "";
+
+            let file = "N/A", line = "N/A";
+            const loc = res.locations?.[0]?.physicalLocation;
+            if (loc) {
+              file = loc.artifactLocation?.uri || "N/A";
+              line = loc.region?.startLine || "N/A";
+            }
+
+            md += `### ${i + 1}. ${res.ruleId}\n`;
+            md += `**Severity:** ${res.level}\n\n`;
+            md += `**Location:** \`${file}:${line}\`\n\n`;
+            md += `**Message:** ${escapeMd(message)}\n\n`;
+
+            if (fullDesc) md += `**Description:** ${escapeMd(fullDesc)}\n\n`;
+
+            md += `---\n\n`;
+          });
+
+          return md;
         }
 
-        const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
-        const markdown = fn(sarif);
+        function escapeMd(str) {
+          return str.replace(/[\|\*`_]/g, "\\$&");
+        }
 
-        fs.appendFileSync(outputPath,
-          `markdown_body<<EOF\n${markdown}\nEOF\n`
-        );
+        // ---- Load SARIF ----
+        const sarif = JSON.parse(fs.readFileSync(process.env.SARIF_PATH, 'utf8'));
+        const markdown = convertSarifToMarkdown(sarif);
+
+        fs.appendFileSync(process.env.GITHUB_OUTPUT,
+          `markdown_body<<EOF\n${markdown}\nEOF\n`);
         EOF
+    
     - name: Post/Update PR Comment
       uses: actions/github-script@v7
       if: github.event_name == 'pull_request'
