@@ -30,7 +30,7 @@ runs:
         fail-build: ${{ inputs.fail_build }}
         output-format: ${{ inputs.output_format }}
         output-file: grype-results.sarif
-        severity-cutoff: critical
+        severity-cutoff: high
         only-fixed: true
     # - name: Scan image using Grype
     #   id: grype
