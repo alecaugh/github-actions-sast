@@ -29,6 +29,7 @@ runs:
         image: "localbuild/testimage:latest"
         fail-build: ${{ inputs.fail_build }}
         output-format: ${{ inputs.output_format }}
+        output-file: grype-results.sarif
         severity-cutoff: critical
         only-fixed: true
     # - name: Scan image using Grype
@@ -44,5 +45,5 @@ runs:
       uses: ./sarif-pr-comment
       if: success() || failure()
       with:
-        sarif_file_path: results.sarif
+        sarif_file_path: grype-results.sarif
         comment_title: '### 🔒 Grype Security Scan Results'

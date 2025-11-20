@@ -23,6 +23,7 @@ runs:
         directory: ${{ inputs.directory }}
         soft_fail: ${{ inputs.soft_fail }}
         output_format: ${{ inputs.output_format }}
+        output_file_path: checkov-sarif.results,
         framework: all
         quiet: true
         compact: true
@@ -30,5 +31,5 @@ runs:
       uses: ./sarif-pr-comment
       if: success() || failure()
       with:
-        sarif_file_path: results.sarif
+        sarif_file_path: checkov-sarif.results
         comment_title: '### 🔒 Checkov Security Scan Results'
