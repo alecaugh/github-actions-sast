@@ -207,9 +207,9 @@ runs:
       if: github.event_name == 'pull_request'
       with:
         script: |
-          const title = '${{ inputs.comment_title }}';
-          const convertedBody = '${{ steps.convert-to-md.outputs.markdown_body }}';
-          const fullBody = title + '\n\n' + convertedBody;
+          const title = `${{ toJSON(inputs.comment_title) }}`;
+          const body = process.env.STEPS_CONVERT_TO_MD_MARKDOWN_BODY;  // ← SAFE
+          const fullBody = `${title}\n\n${body}`;
 
           if (!context.payload.pull_request) {
             console.log("Not a Pull Request event. Skipping comment posting.");
@@ -218,33 +218,28 @@ runs:
 
           const issue_number = context.payload.pull_request.number;
 
-          // 1. Retrieve existing bot comments for the PR
           const { data: comments } = await github.rest.issues.listComments({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: issue_number,
-          })
+            issue_number,
+          });
 
-          // Find the existing comment using the unique title
-          const botComment = comments.find(comment => {
-            return comment.body.includes(title);
-          })
+          const existing = comments.find(c => c.body?.includes(title));
 
-          // 2. If we have a comment, update it, otherwise create a new one
-          if (botComment) {
+          if (existing) {
             await github.rest.issues.updateComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              comment_id: botComment.id,
-              body: fullBody
-            })
-            console.log('Updated existing SARIF comment.');
+              comment_id: existing.id,
+              body: fullBody,
+            });
+            console.log("Updated existing SARIF comment.");
           } else {
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue_number,
-              body: fullBody
-            })
-            console.log('Created new SARIF comment.');
+              issue_number,
+              body: fullBody,
+            });
+            console.log("Created new SARIF comment.");
           }
