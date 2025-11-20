@@ -29,44 +29,4 @@ runs:
       with:
         sarif_file_path: results.sarif
         comment_title: '### 🔒 Checkov Security Scan Results'
-    # - name: Post comment with results
-    #   uses: actions/github-script@v7
-    #   if: success() || failure()
-    #   with:
-    #     script: |
-    #       const fs = require('fs');
-    #       const results = fs.readFileSync('results.sarif', 'utf8');
 
-    #       // 1. Retrieve existing bot comments for the PR
-    #       const { data: comments } = await github.rest.issues.listComments({
-    #         owner: context.repo.owner,
-    #         repo: context.repo.repo,
-    #         issue_number: context.issue.number,
-    #       })
-    #       const botComment = comments.find(comment => {
-    #         return comment.user.type === 'Bot' && comment.body.includes('XXXXX')
-    #       })
-
-    #       // 2. If we have a comment, update it, otherwise create a new one
-    #       if (botComment) {
-    #         github.rest.issues.updateComment({
-    #           ...context.repo,
-    #           comment_id: botComment.id,
-    #           body: results
-    #         })
-    #       } else {
-    #         github.rest.issues.createComment({
-    #           ...context.repo,
-    #           issue_number: context.issue.number,
-    #           body: results
-    #         })
-    #       }
-    # - name: Upload SARIF file
-    #   uses: github/codeql-action/upload-sarif@v4
-    #   if: success() || failure()
-    #   with:
-    #     # Path to SARIF file relative to the root of the repository
-    #     sarif_file: results.sarif
-    #     # Optional category for the results
-    #     # Used to differentiate multiple results for one commit
-    #     category: checkov-results
