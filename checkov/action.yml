@@ -3,15 +3,17 @@ description: |-
   Run [`checkov`](https://www.checkov.io) static analysis.
 inputs:
   directory:
-    description: The directory to scan.
-    required: true
-  framework:
-    description: The framework to scan.
-    required: true
+    description: The directory to scan (default scans entire repository).
+    required: false
+    default: '.'
   output_format:
     description: The output format.
     required: false
     default: 'github_failed_only'
+  soft_fail:
+    description: Do not return an error code if there are failed checks.
+    required: false
+    default: 'false'
 runs:
   using: 'composite'
   steps:
@@ -19,8 +21,9 @@ runs:
       uses: bridgecrewio/checkov-action@69e494e1b28dc24ec680e7ed364e0c227e2026bf	# v12.2743.0
       with:
         directory: ${{ inputs.directory }}
-        framework: ${{ inputs.framework }}
         output_format: ${{ inputs.output_format }}
+        soft_fail: ${{ inputs.soft_fail }}
+        framework: all
         quiet: true
         compact: true
     - name: Post SARIF Comment
@@ -29,4 +32,3 @@ runs:
       with:
         sarif_file_path: results.sarif
         comment_title: '### 🔒 Checkov Security Scan Results'
-

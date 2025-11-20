@@ -5,7 +5,7 @@ inputs:
   fail-on-valid-secret:
     description: Fail the secret-scan job if a new valid secret is detected (recommended).
     required: false
-    default: "true"
+    default: 'true'
 runs:
   using: 'composite'
   steps:
