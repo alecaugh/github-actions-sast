@@ -9,11 +9,7 @@ inputs:
   output_format:
     description: The output format.
     required: false
-    default: 'github_failed_only'
-  soft_fail:
-    description: Do not return an error code if there are failed checks.
-    required: false
-    default: 'false'
+    default: 'sarif'
   fail_workflow:
     description: Return an error code if there are failed checks.
     required: false
@@ -32,12 +28,11 @@ runs:
         framework: all
         quiet: true
         compact: true
-    - name: Post SARIF Comment
-      uses: ./sarif-pr-comment
+    - name: Convert SARIF to Markdown
+      uses: ./sarif-to-markdown
       if: success() || failure()
       with:
         sarif_file_path: checkov-sarif.results
-        # comment_title: '### 🔒 Checkov Security Scan Results'
     - name: Post/Update PR Comment
       uses: ./pr-comment
       if: success() || failure()

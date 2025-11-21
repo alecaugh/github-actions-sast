@@ -19,11 +19,15 @@ jobs:
       - uses: ./checkov
         with:
           fail_workflow: false
-          output_format: sarif
+      - uses: ./build
+        id: build
+        with:
+          registry: localbuild
+          image_name: testimage
       - uses: ./grype
         with:
+          image_id: ${{ steps.build.outputs.image }}
           fail_workflow: false
-          output_format: sarif
       - uses: ./trufflehog
         with:
-          fail_workflow: false
+          fail_workflow: true

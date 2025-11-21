@@ -1,14 +1,10 @@
-name: Post SARIF Results as PR Comment
+name: SARIF to Markdown.
 description: >
   Converts a SARIF file to Markdown.
 inputs:
   sarif_file_path:
     description: 'The path to the SARIF file to be converted (e.g., results.sarif).'
     required: true
-  # comment_title:
-  #   description: 'The title to prepend to the comment body.'
-  #   required: true
-  #   default: '## 🔒 Security Scan Results'
 
 runs:
   using: 'composite'

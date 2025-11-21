@@ -1,0 +1,28 @@
+name: Build composite action
+description: |-
+  Run
+inputs:
+  registry:
+    description: 'The registry where the container will be stored'
+    required: true
+    default: 'localbuild'
+  image_name:
+    description: 'The name of the image to build'
+    required: true
+    default: 'testimage'
+outputs:
+  image:
+    description: 'Docker image'
+    value: ${{ steps.build.outputs.imageid }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: build local container
+      uses: docker/build-push-action@v4
+      with:
+        tags: ${{ inputs.registry }}/${{ inputs.image_name }}
+        push: false
+        load: true

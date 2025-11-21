@@ -2,11 +2,11 @@
 
 ## Key Features
 
-- [Official GitHub Action for checkov](https://github.com/bridgecrewio/checkov-action)
+- [Official GitHub Action for Grype](https://github.com/anchore/scan-action)
 
 ## Description
 
-Run [`checkov`](https://www.checkov.io) static analysis.
+Run [`Grype`](https://github.com/anchore/scan-action) image static analysis.
 
 ## Inputs
 
