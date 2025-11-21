@@ -1,0 +1,64 @@
+name: Pr-comment GitHub Composite Action
+description: |
+   A composite action to add a Document as a comment in a PR.
+
+inputs:
+  document_txt_path:
+    description: 'Path to the text file to be used as the comment body'
+    required: true
+  pr_comment_title:
+    description: 'Title of the PR comment to identify it'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - id: create_document
+      shell: bash
+      run: |
+        {
+          echo 'DOCUMENT<<EOF'
+          cat ${{ inputs.document_txt_path }}
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
+
+    - id: write_summary_md
+      shell: bash
+      run: |
+        REPORT_FILE=$(mktemp -t summary.md.XXXXX)
+        echo "REPORT_FILE=$REPORT_FILE" >> $GITHUB_ENV
+        cat >> $REPORT_FILE << 'ENDOFREPORT'
+        ## ${{ inputs.pr_comment_title }}
+        <details>
+        <summary>Document</summary>
+
+        ```
+        ${{ steps.create_document.outputs.DOCUMENT }}
+        ```
+        </details>
+
+        *Pusher: @${{ github.actor }}
+        Workflow: [`${{ github.workflow }}`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+        ENDOFREPORT
+
+    - id: comment_body
+      shell: bash
+      run: |
+        CONTENT=$(cat $REPORT_FILE)
+        echo "REPORT_CONTENT<<ENDOFREPORT" >> $GITHUB_OUTPUT
+        echo "$CONTENT" >> $GITHUB_OUTPUT
+        echo "ENDOFREPORT" >> $GITHUB_OUTPUT
+
+    - id: find_comment
+      uses: peter-evans/find-comment@v3
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: ${{ inputs.pr_comment_title }}
+
+    - uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find_comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: ${{ steps.comment_body.outputs.REPORT_CONTENT }}
+        edit-mode: replace

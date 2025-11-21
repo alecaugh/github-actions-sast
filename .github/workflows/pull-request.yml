@@ -25,3 +25,5 @@ jobs:
           fail_build: false
           output_format: sarif
       - uses: ./trufflehog
+        with:
+          fail-on-valid-secret: true

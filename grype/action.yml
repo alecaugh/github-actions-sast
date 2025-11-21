@@ -30,20 +30,17 @@ runs:
         fail-build: ${{ inputs.fail_build }}
         output-format: ${{ inputs.output_format }}
         output-file: grype-results.sarif
-        severity-cutoff: high
+        severity-cutoff: critical
         only-fixed: true
-    # - name: Scan image using Grype
-    #   id: grype
-    #   uses: anchore/scan-action@v6
-    #   with:
-    #     image: "${{ inputs.registry }}/${{ inputs.image_name }}"
-    #     fail-build: false
-    #     output-format: sarif
-    #     severity-cutoff: critical
-    #     only-fixed: true
-    - name: Post SARIF Comment
+    - name: Convert SARIF to Markdown
       uses: ./sarif-pr-comment
       if: success() || failure()
       with:
         sarif_file_path: grype-results.sarif
-        comment_title: '### 🔒 Grype Security Scan Results'
+        # comment_title: '### 🔒 Grype Image Security Scan Results'
+    - name: Post/Update PR Comment
+      uses: ./pr-comment
+      if: success() || failure()
+      with:
+        document_txt_path: sarif_converted.md
+        pr_comment_title: '### 🔒 Grype Image Security Scan Results'
