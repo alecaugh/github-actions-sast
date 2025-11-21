@@ -24,7 +24,7 @@ runs:
         load: true
 
     - name: Scan image
-      uses: anchore/scan-action@v6
+      uses: anchore/scan-action@3aaf50d765cfcceafa51d322ccb790e40f6cd8c5 # v7.2.0
       with:
         image: "localbuild/testimage:latest"
         fail-build: ${{ inputs.fail_build }}
