@@ -15,13 +15,13 @@ runs:
         fetch-depth: 0
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@v3.90.1 # aade3bff5594fe8808578dd4db3dfeae9bf2abdc # v 3.91.1
+      uses: trufflesecurity/trufflehog@f15cb8b37b9b70056bc82a8eb7151f75fad27a71 # v3.90.1 # aade3bff5594fe8808578dd4db3dfeae9bf2abdc # v 3.91.1
       continue-on-error: true
       with:
         path: ./
         base: ${{ github.event.repository.default_branch }}
         head: HEAD
-        version: 3.90.1
+        version: 3.90.13
     - name: TruffleHog Scan Results Success
       shell: bash
       if: steps.trufflehog.outcome != 'failure'
