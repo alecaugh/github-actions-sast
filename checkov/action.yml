@@ -14,6 +14,11 @@ inputs:
     description: Do not return an error code if there are failed checks.
     required: false
     default: 'false'
+  fail_workflow:
+    description: Return an error code if there are failed checks.
+    required: false
+    default: 'true'
+  
 runs:
   using: 'composite'
   steps:
@@ -21,7 +26,7 @@ runs:
       uses: bridgecrewio/checkov-action@69e494e1b28dc24ec680e7ed364e0c227e2026bf	# v12.2743.0
       with:
         directory: ${{ inputs.directory }}
-        soft_fail: ${{ inputs.soft_fail }}
+        soft_fail: ${{ inputs.fail_workflow == 'true' && 'false' || 'true' }}
         output_format: ${{ inputs.output_format }}
         output_file_path: checkov-sarif.results,
         framework: all
@@ -38,4 +43,4 @@ runs:
       if: success() || failure()
       with:
         document_txt_path: sarif_converted.md
-        pr_comment_title: '### 🔒 Checkov Security Scan Results'
+        pr_comment_title: '🔒 Checkov Security Scan Results'

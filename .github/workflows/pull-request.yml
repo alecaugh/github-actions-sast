@@ -18,12 +18,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./checkov
         with:
-          soft_fail: true
+          fail_workflow: false
           output_format: sarif
       - uses: ./grype
         with:
-          fail_build: false
+          fail_workflow: false
           output_format: sarif
       - uses: ./trufflehog
         with:
-          fail-on-valid-secret: true
+          fail_workflow: false

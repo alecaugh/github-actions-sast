@@ -2,8 +2,8 @@ name: TruffleHog composite action
 description: |-
   Run [`TruffleHog`](https://trufflesecurity.com/) secrets detection.
 inputs:
-  fail-on-valid-secret:
-    description: Fail the secret-scan job if a new valid secret is detected (recommended).
+  fail_workflow:
+    description: Fail the workflow if a new valid secret is detected (recommended).
     required: false
     default: 'true'
 runs:
@@ -58,7 +58,7 @@ runs:
       if: success() || failure()
       with:
         document_txt_path: comment.md
-        pr_comment_title: '### 🔒 TruffleHog Security Scan Results'
+        pr_comment_title: '🔒 TruffleHog Security Scan Results'
     # - name: Post/Update PR comment
     #   uses: actions/github-script@v7
     #   with:
@@ -95,7 +95,7 @@ runs:
       shell: bash
       if: steps.trufflehog.outcome == 'failure'
       run: |
-        if [ ${{ inputs.fail-on-valid-secret }} == "true" ]
+        if [ ${{ inputs.fail_workflow }} == "true" ]
         then
           exit 1
         fi
