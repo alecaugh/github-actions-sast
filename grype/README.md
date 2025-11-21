@@ -6,13 +6,13 @@
 
 ## Description
 
-Run [`Grype`](https://github.com/anchore/scan-action) image static analysis.
+Run [`Grype`](https://github.com/anchore/scan-action) container image security scan.
 
 ## Inputs
 
 | name            | description                                             | required | default |
 |-----------------|---------------------------------------------------------|----------|---------|
-| `directory`     | <p>The directory to scan.</p>                           | `false`  | `"."`   |
+| `image_id`      | <p>The image to scan.</p>                               | `true`   |         |
 | `output_format` | <p>The output format.</p>                               | `false`  | `sarif` |
 | `fail_workflow` | <p>Return an error code if there are failed checks.</p> | `false`  | `true`  |
 
@@ -22,22 +22,25 @@ This action is a `composite` action.
 
 ## Usage
 
-```yaml
-- uses: trustpilot/actions/checkov@v1
-  with:
-    directory:
-    # The directory to scan.
-    #
-    # Required: false
-    # Default: '.'
+This action requires a built container image as input.
 
-    output_format:
+The `image` ID output from the build step can be used to reference the built container image.
+
+```yaml
+- uses: trustpilot/actions/grype@v1
+  with:
+    image_id: <image_id_output_from_container_build_step>
+    # The image to scan.
+    #
+    # Required: true
+
+    output_format: sarif
     # The output format.
     #
     # Required: false
     # Default: 'sarif'
 
-    fail_workflow:
+    fail_workflow: true
     # Return an error code if there are failed checks.
     #
     # Required: false
@@ -49,8 +52,17 @@ This action is a `composite` action.
 ### GitHub Actions
 
 ```yaml
-- uses: trustpilot/actions/checkov@v1
+# Build image step
+- name: Run Build Docker
+  id: build-docker
+  uses: trustpilot/actions/build-docker@main
   with:
-    fail_workflow: false
+    tag: ${{ steps.version.outputs.build_version }}
+    src: directory-from-root
 
+# Scan image step
+- uses: trustpilot/actions/grype@v1
+  with:
+    image_id: ${{ steps.build-docker.outputs.image }}
+    fail_workflow: false
 ```
