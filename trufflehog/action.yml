@@ -18,7 +18,9 @@ runs:
       uses: trufflesecurity/trufflehog@aade3bff5594fe8808578dd4db3dfeae9bf2abdc # v 3.91.1
       continue-on-error: true
       with:
-        path: ./
+        scan: git
+        repository: .
+        # path: ./
         base: ${{ github.event.pull_request.base.ref || github.repository.default_branch }}
         head: HEAD
         version: 3.91.1
