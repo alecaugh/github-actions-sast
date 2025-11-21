@@ -11,7 +11,7 @@ inputs:
   #   required: true
   #   default: 'testimage'
   image_id:
-    description: 'The name of the image to build'
+    description: 'The ID of the image to scan'
     required: true
   output_format:
     description: The output format.

@@ -15,7 +15,7 @@ runs:
         fetch-depth: 0
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@vaade3bff5594fe8808578dd4db3dfeae9bf2abdc # v 3.91.1
+      uses: trufflesecurity/trufflehog@aade3bff5594fe8808578dd4db3dfeae9bf2abdc # v 3.91.1
       continue-on-error: true
       with:
         path: ./
