@@ -10,11 +10,11 @@ Run [`Grype`](https://github.com/anchore/scan-action) container image security s
 
 ## Inputs
 
-| name            | description                                             | required | default                                 |
-|-----------------|---------------------------------------------------------|----------|-----------------------------------------|
-| `image_id`      | <p>The image to scan.</p>                               | `true`   | ${{ steps.build-docker.outputs.image }} |
-| `output_format` | <p>The output format.</p>                               | `false`  | `sarif`                                 |
-| `fail_workflow` | <p>Return an error code if there are failed checks.</p> | `false`  | `true`                                  |
+| name            | description                                             | required | default |
+|-----------------|---------------------------------------------------------|----------|---------|
+| `image_id`      | <p>The image to scan.</p>                               | `true`   |         |
+| `output_format` | <p>The output format.</p>                               | `false`  | `sarif` |
+| `fail_workflow` | <p>Return an error code if there are failed checks.</p> | `false`  | `true`  |
 
 ## Runs
 
@@ -33,7 +33,6 @@ The `image` ID output from the build step can be used to reference the built con
     # The image to scan.
     #
     # Required: true
-    # Default: ${{ steps.build-docker.outputs.image }}
 
     output_format: sarif
     # The output format.
