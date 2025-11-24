@@ -15,13 +15,13 @@ runs:
         fetch-depth: 0
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@v3.90.13 # Pinned to tag due to error when pinning to commit hash
+      uses: trufflesecurity/trufflehog@v3.90.1 # Pinned to tag due to error when pinning to commit hash
       continue-on-error: true
       with:
         path: ./
         base: ${{ github.event.repository.default_branch }}
         head: HEAD
-        version: 3.90.13
+        version: 3.90.1
     - name: TruffleHog Scan Results Success
       shell: bash
       if: steps.trufflehog.outcome != 'failure'
