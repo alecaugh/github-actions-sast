@@ -3,6 +3,7 @@
 ## Key Features
 
 - [Official GitHub Action for TruffleHog](https://github.com/marketplace/actions/trufflehog-oss)
+- Output is shown in a PR comment (when run in a workflow triggered by a PR)
 
 ## Description
 

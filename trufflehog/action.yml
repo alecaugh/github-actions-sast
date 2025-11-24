@@ -55,7 +55,7 @@ runs:
         EOF
     - name: Post/Update PR Comment
       uses: ./pr-comment
-      if: success() || failure()
+      if: ${{ github.event.pull_request }} && success() || failure()
       with:
         document_txt_path: comment.md
         pr_comment_title: '🔒 TruffleHog Security Scan Results'
