@@ -1,7 +1,9 @@
 name: Security scan
 
 on:
-  pull_request: {} # Should only be triggered on PR events
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read # Required to check out the repository

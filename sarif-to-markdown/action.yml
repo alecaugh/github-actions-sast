@@ -1,0 +1,80 @@
+name: SARIF to Markdown.
+description: >
+  Converts a SARIF file to Markdown.
+inputs:
+  sarif_file_path:
+    description: 'The path to the SARIF file to be converted (e.g., results.sarif).'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Convert SARIF to Markdown
+      id: convert
+      shell: bash
+      env:
+        SARIF_PATH: ${{ inputs.sarif_file_path }}
+      run: |
+        node << 'EOF'
+        const fs = require('fs');
+
+        function escape(str) {
+          return str.replace(/[\|\*`_]/g, "\\$&");
+        }
+
+        function convert(sarif) {
+          if (!sarif || !sarif.runs) {
+            return "**Invalid SARIF**: no runs[] found.";
+          }
+
+          const run = sarif.runs[0];
+          const rules = {};
+          const results = run.results || [];
+
+          if (run.tool?.driver?.rules) {
+            run.tool.driver.rules.forEach(rule => rules[rule.id] = rule);
+          }
+
+          let md = "";
+
+          if (results.length === 0) {
+            return md + "_No issues found. Great job!_";
+          }
+
+          md += `| Severity | Rule | Message | File:Line |\n`;
+          md += `|---------|------|---------|-----------|\n`;
+
+          const severity = {
+            error: "❌ Critical/High",
+            warning: "⚠️ Medium",
+            note: "ℹ️ Low",
+          };
+
+          results.forEach(r => {
+            const rule = rules[r.ruleId] || {};
+            const level = severity[r.level] || r.level;
+
+            const message =
+              (r.message && r.message.text) ||
+              (rule.shortDescription && rule.shortDescription.text) ||
+              "No message";
+
+            const loc = r.locations?.[0]?.physicalLocation;
+            const file = loc?.artifactLocation?.uri || "N/A";
+            const line = loc?.region?.startLine || "N/A";
+
+            md += `| ${level} | ${r.ruleId} | ${escape(message)} | ${file}:${line} |\n`;
+          });
+
+          return md;
+        }
+
+        const sarif = JSON.parse(fs.readFileSync(process.env.SARIF_PATH, 'utf8'));
+        const markdown = convert(sarif);
+
+        fs.writeFileSync("sarif_converted.md", markdown);
+        EOF

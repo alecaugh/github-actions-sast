@@ -1,0 +1,38 @@
+name: Grype composite action
+description: |-
+  Run [`grype`](https://github.com/anchore/grype) static analysis.
+inputs:
+  image_id:
+    description: 'The ID of the image to scan'
+    required: true
+  output_format:
+    description: The output format.
+    required: false
+    default: 'sarif'
+  fail_workflow:
+    description: Return an error code if there are failed checks.
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - name: Scan image
+      uses: anchore/scan-action@3aaf50d765cfcceafa51d322ccb790e40f6cd8c5 # v7.2.0
+      with:
+        image: ${{ inputs.image_id }}
+        fail-build: ${{ inputs.fail_workflow }}
+        output-format: ${{ inputs.output_format }}
+        output-file: grype-results.sarif
+        severity-cutoff: critical
+        only-fixed: true
+    - name: Convert SARIF to Markdown
+      uses: ./sarif-to-markdown
+      if: success() || failure()
+      with:
+        sarif_file_path: grype-results.sarif
+    - name: Post/Update PR Comment
+      uses: ./pr-comment
+      if: ${{ github.event.pull_request }} && success() || failure()
+      with:
+        document_txt_path: sarif_converted.md
+        pr_comment_title: '🔒 Grype Image Security Scan Results'

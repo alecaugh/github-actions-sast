@@ -1,0 +1,69 @@
+name: TruffleHog composite action
+description: |-
+  Run [`TruffleHog`](https://trufflesecurity.com/) secrets detection.
+inputs:
+  fail_workflow:
+    description: Fail the workflow if a new valid secret is detected (recommended).
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: TruffleHog OSS
+      id: trufflehog
+      uses: trufflesecurity/trufflehog@907ac64fd42b18dab2ceba2fda39834d3f8ba7e3 # v3.90.1 (Later versions result in error due to unfixed bug)
+      continue-on-error: true
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        version: 3.90.1
+    - name: TruffleHog Scan Results Success
+      shell: bash
+      if: steps.trufflehog.outcome != 'failure'
+      run: |
+        python - <<EOF
+        comment_body = ""
+        comment_body += "No new secrets found.\n\n"
+
+        with open("comment.md", "a") as file:
+            file.write(comment_body)
+        EOF
+    - name: TruffleHog Scan Results Failure
+      shell: bash
+      if: steps.trufflehog.outcome == 'failure'
+      run: |
+        python - <<EOF
+        import os
+
+        github_repository = os.getenv('GITHUB_REPOSITORY')
+        github_ref = os.getenv('GITHUB_REF')
+
+        pr_number = github_ref.split('/')[-2]
+
+        files_changed_url = f"https://github.com/{github_repository}/pull/{pr_number}/files"
+
+        comment_body = ""
+        comment_body += "**Valid secrets found!**\n\n Please check [Files changed](" + files_changed_url + ") tab in PR to see identified secrets then remove and rotate.\n\n"
+
+        with open("comment.md", "a") as file:
+            file.write(comment_body)
+        EOF
+    - name: Post/Update PR Comment
+      uses: ./pr-comment
+      if: ${{ github.event.pull_request }} && success() || failure()
+      with:
+        document_txt_path: comment.md
+        pr_comment_title: '🔒 TruffleHog Security Scan Results'
+    - name: Scan Results Status
+      shell: bash
+      if: steps.trufflehog.outcome == 'failure'
+      run: |
+        if [ ${{ inputs.fail_workflow }} == "true" ]
+        then
+          exit 1
+        fi
