@@ -15,7 +15,7 @@ runs:
         fetch-depth: 0
     - name: TruffleHog OSS
       id: trufflehog
-      uses: trufflesecurity/trufflehog@907ac64fd42b18dab2ceba2fda39834d3f8ba7e3 # v3.90.1 # Pinned to tag due to error when pinning to commit hash
+      uses: trufflesecurity/trufflehog@907ac64fd42b18dab2ceba2fda39834d3f8ba7e3 # v3.90.1 (Later versions result in error due to unfixed bug)
       continue-on-error: true
       with:
         path: ./
