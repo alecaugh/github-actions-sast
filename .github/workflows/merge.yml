@@ -1,0 +1,35 @@
+name: Security scan
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read # Required to check out the repository
+  issues: write # Required for TruffleHog to create issues in PRs
+  pull-requests: write # Required to post comments in PRs
+
+jobs:
+  security-scan:
+    # uses: alecaugh/github-actions-sast/.github/workflows/security-scan.yml@main
+    # with:
+    #   fail-on-valid-secret: true # Fail secret-scan job when valid secret detected (recommended)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./checkov
+        with:
+          fail_workflow: false
+      - uses: ./build
+        id: build
+        with:
+          registry: localbuild
+          image_name: testimage
+      - uses: ./grype
+        with:
+          image_id: ${{ steps.build.outputs.image }}
+          fail_workflow: false
+      - uses: ./trufflehog
+        with:
+          fail_workflow: true
