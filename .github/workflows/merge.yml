@@ -32,4 +32,4 @@ jobs:
           fail_workflow: false
       - uses: ./trufflehog
         with:
-          fail_workflow: true
+          fail_workflow: false

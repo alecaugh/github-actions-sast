@@ -32,7 +32,7 @@ runs:
         sarif_file_path: grype-results.sarif
     - name: Post/Update PR Comment
       uses: ./pr-comment
-      if: ${{ github.event.pull_request }} && success() || failure()
+      if: github.event_name == 'pull_request' && always()
       with:
         document_txt_path: sarif_converted.md
         pr_comment_title: '🔒 Grype Image Security Scan Results'
