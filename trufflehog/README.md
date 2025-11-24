@@ -24,7 +24,7 @@ This action is a `composite` action.
 ```yaml
 - uses: trustpilot/actions/checkov@v1
   with:
-    fail_workflow:
+    fail_workflow: false
     # Return an error code if there are failed checks.
     #
     # Required: false

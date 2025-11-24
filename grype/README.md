@@ -41,7 +41,7 @@ The `image` ID output from the build step can be used to reference the built con
     # Required: false
     # Default: 'sarif'
 
-    fail_workflow: true
+    fail_workflow: false
     # Return an error code if there are failed checks.
     #
     # Required: false

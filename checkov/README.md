@@ -26,19 +26,19 @@ This action is a `composite` action.
 ```yaml
 - uses: trustpilot/actions/checkov@v1
   with:
-    directory:
+    directory: '.'
     # The directory to scan.
     #
     # Required: false
     # Default: '.'
 
-    output_format:
+    output_format: sarif
     # The output format.
     #
     # Required: false
     # Default: 'sarif'
 
-    fail_workflow:
+    fail_workflow: false
     # Return an error code if there are failed checks.
     #
     # Required: false
