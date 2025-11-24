@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./checkov
         with:
-          fail_workflow: false
+          fail_workflow: true
       - uses: ./build
         id: build
         with:
@@ -27,7 +27,7 @@ jobs:
       - uses: ./grype
         with:
           image_id: ${{ steps.build.outputs.image }}
-          fail_workflow: false
+          fail_workflow: true
       - uses: ./trufflehog
         with:
           fail_workflow: true
