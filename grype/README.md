@@ -10,11 +10,11 @@ Run [`Grype`](https://github.com/anchore/scan-action) container image security s
 
 ## Inputs
 
-| name            | description                                             | required | default |
-|-----------------|---------------------------------------------------------|----------|---------|
-| `image_id`      | <p>The image to scan.</p>                               | `true`   |         |
-| `output_format` | <p>The output format.</p>                               | `false`  | `sarif` |
-| `fail_workflow` | <p>Return an error code if there are failed checks.</p> | `false`  | `true`  |
+| name            | description                                             | required | default                                 |
+|-----------------|---------------------------------------------------------|----------|-----------------------------------------|
+| `image_id`      | <p>The image to scan.</p>                               | `true`   | ${{ steps.build-docker.outputs.image }} |
+| `output_format` | <p>The output format.</p>                               | `false`  | `sarif`                                 |
+| `fail_workflow` | <p>Return an error code if there are failed checks.</p> | `false`  | `true`                                  |
 
 ## Runs
 
@@ -22,7 +22,7 @@ This action is a `composite` action.
 
 ## Usage
 
-This action requires a built container image as input.
+*This action requires a built container image as input.*
 
 The `image` ID output from the build step can be used to reference the built container image.
 
@@ -33,6 +33,7 @@ The `image` ID output from the build step can be used to reference the built con
     # The image to scan.
     #
     # Required: true
+    # Default: ${{ steps.build-docker.outputs.image }}
 
     output_format: sarif
     # The output format.
@@ -52,7 +53,7 @@ The `image` ID output from the build step can be used to reference the built con
 ### GitHub Actions
 
 ```yaml
-# Build image step
+# 1. Build image step
 - name: Run Build Docker
   id: build-docker
   uses: trustpilot/actions/build-docker@main
@@ -60,7 +61,7 @@ The `image` ID output from the build step can be used to reference the built con
     tag: ${{ steps.version.outputs.build_version }}
     src: directory-from-root
 
-# Scan image step
+# 2. Grype scan image step
 - uses: trustpilot/actions/grype@v1
   with:
     image_id: ${{ steps.build-docker.outputs.image }}

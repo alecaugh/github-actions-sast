@@ -5,6 +5,7 @@ inputs:
   image_id:
     description: 'The ID of the image to scan'
     required: true
+    default: ${{ steps.build-docker.outputs.image }}
   output_format:
     description: The output format.
     required: false
