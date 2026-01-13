@@ -19,6 +19,7 @@ runs:
         {
           echo 'DOCUMENT<<EOF'
           cat ${{ inputs.document_txt_path }}
+          echo ""
           echo EOF
         } >> "$GITHUB_OUTPUT"
 
@@ -33,7 +34,6 @@ runs:
         <summary>Document</summary>
 
         ${{ steps.create_document.outputs.DOCUMENT }}
-
         </details>
 
         *Pusher: @${{ github.actor }}

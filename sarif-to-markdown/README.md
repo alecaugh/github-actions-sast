@@ -1,4 +1,4 @@
-# checkov
+# SARIF to Markdown
 
 ## Key Features
 
@@ -6,7 +6,7 @@
 
 ## Description
 
-Convert SARIF file from security scan output to Markdown (sarif_converted.md).
+Generate Markdown file from security scan SARIF file (sarif_converted.md).
 
 ## Inputs
 
@@ -21,7 +21,7 @@ This action is a `composite` action.
 ## Usage
 
 ```yaml
-- uses: trustpilot/actions/sarif-to-markdown@v1
+- uses: ./sarif-to-markdown
   with:
     sarif_file_path:
     # The path to the SARIF file to be converted (e.g., results.sarif).
@@ -34,8 +34,7 @@ This action is a `composite` action.
 ### GitHub Actions
 
 ```yaml
-- uses: trustpilot/actions/sarif-to-markdown@v1
+- uses: ./sarif-to-markdown
   with:
     sarif_file_path: results.sarif
-
 ```

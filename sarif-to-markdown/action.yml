@@ -45,8 +45,8 @@ runs:
             return md + "_No issues found. Great job!_";
           }
 
-          md += `| Severity | Rule | Message | File:Line |\n`;
-          md += `|---------|------|---------|-----------|\n`;
+          md += `| Severity | Rule | Message | File:Line | Fix |\n`;
+          md += `|---------|------|---------|-----------|-----|\n`;
 
           const severity = {
             error: "❌ Critical/High",
@@ -67,7 +67,9 @@ runs:
             const file = loc?.artifactLocation?.uri || "N/A";
             const line = loc?.region?.startLine || "N/A";
 
-            md += `| ${level} | ${r.ruleId} | ${escape(message)} | ${file}:${line} |\n`;
+            const fix = r.fixes?.[0]?.description.text || "N/A";
+
+            md += `| ${level} | ${r.ruleId} | ${escape(message)} | ${file}:${line} | ${fix} |\n`;
           });
 
           return md;
