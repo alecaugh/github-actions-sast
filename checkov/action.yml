@@ -6,10 +6,6 @@ inputs:
     description: The directory to scan (default scans entire repository).
     required: false
     default: '.'
-  output_format:
-    description: The output format.
-    required: false
-    default: 'sarif'
   fail_workflow:
     description: Return an error code if there are failed checks.
     required: false
@@ -22,12 +18,9 @@ runs:
       uses: bridgecrewio/checkov-action@69e494e1b28dc24ec680e7ed364e0c227e2026bf	# v12.2743.0
       with:
         directory: ${{ inputs.directory }}
-        soft_fail: ${{ inputs.fail_workflow == 'true' && 'false' || 'true' }}
-        output_format: ${{ inputs.output_format }}
+        soft_fail: ${{ inputs.fail_workflow != 'true' }}
         output_file_path: checkov-sarif.results,
         framework: all
-        quiet: true
-        compact: true
     - name: Convert SARIF to Markdown
       uses: ./sarif-to-markdown
       if: success() || failure()
@@ -38,4 +31,4 @@ runs:
       if: github.event_name == 'pull_request' && always()
       with:
         document_txt_path: sarif_converted.md
-        pr_comment_title: '🔒 Checkov Security Scan Results'
+        pr_comment_title: '🔒 Checkov Infrastructure Security Scan Results'

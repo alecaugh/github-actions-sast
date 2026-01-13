@@ -33,7 +33,6 @@ runs:
         <summary>Document</summary>
 
         ${{ steps.create_document.outputs.DOCUMENT }}
-
         </details>
 
         *Pusher: @${{ github.actor }}

@@ -1,0 +1,67 @@
+name: Snyk composite action
+description: |-
+  Run [`Snyk`](https://snyk.io/) static analysis.
+
+inputs:
+  snyk_token:
+    description: Snyk service account token.
+    required: true
+  fail_workflow:
+    description: Return an error code if there are failed checks.
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Detect languages via GitHub API
+      id: detect
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        echo "Fetching languages…"
+        LANG_JSON=$(curl -s -H "Authorization: token $GH_TOKEN" \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/languages)
+
+        echo "Languages detected: $LANG_JSON"
+
+        # Normalise to lowercase for easier matching
+        LOWER=$(echo "$LANG_JSON" | tr '[:upper:]' '[:lower:]')
+
+        if echo "$LOWER" | grep -q "python"; then
+          echo "lang=python" >> $GITHUB_OUTPUT
+        elif echo "$LOWER" | grep -q "javascript" || echo "$LOWER" | grep -q "typescript"; then
+          echo "lang=node" >> $GITHUB_OUTPUT
+        else
+          echo "lang=unknown" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Snyk Scan - Node
+      if: steps.detect.outputs.lang == 'node'
+      uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+      continue-on-error: ${{ inputs.fail_workflow != 'true' }}
+      with:
+        command: test --sarif --sarif-file-output=snyk-results.sarif
+      env:
+        SNYK_TOKEN: ${{ inputs.snyk_token }}
+
+    - name: Snyk Scan - Python
+      if: steps.detect.outputs.lang == 'python'
+      uses: snyk/actions/python@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+      with:
+        command: test --sarif --sarif-file-output=snyk-results.sarif
+      env:
+        SNYK_TOKEN: ${{ inputs.snyk_token }}
+
+    - name: Convert SARIF to Markdown
+      uses: ./sarif-to-markdown
+      if: success() || failure()
+      with:
+        sarif_file_path: snyk-results.sarif
+    - name: Post/Update PR Comment
+      uses: ./pr-comment
+      if: github.event_name == 'pull_request' && always()
+      with:
+        document_txt_path: sarif_converted.md
+        pr_comment_title: '🔒 Snyk Code Security Scan Results'
