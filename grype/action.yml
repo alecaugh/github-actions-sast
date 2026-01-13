@@ -19,7 +19,7 @@ runs:
         fail-build: ${{ inputs.fail_workflow }}
         output-format: 'sarif'
         output-file: grype-results.sarif
-        only-fixed: true
+        only-fixed: true                                                 # Reduce noise to only actionable vulnerabilities
     - name: Convert SARIF to Markdown
       uses: ./sarif-to-markdown
       if: success() || failure()
